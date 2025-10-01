@@ -1,0 +1,191 @@
+# Import Obsidian-specific instructions
+@/path/to/claude/CLAUDE.md
+
+# Claude Note-Taking System
+
+## Overview
+You are instructed to maintain a comprehensive note-taking system to improve task performance and maintain context across sessions. This system is designed to help you work more effectively by storing and referencing important information.
+
+## Notes Location
+
+### Task Notes (Temporary)
+- **Base Directory**: `/path/to/claude/tasks_notes/`
+- **Task Structure**: Each task gets its own folder: `/path/to/claude/tasks_notes/<task_name>/`
+- **File**: All notes go in `<task_name>/notes.md`
+- **Purpose**: Project-specific work, current progress, temporary context
+- **Audience**: Claude only (not human-readable)
+
+### Knowledge Base (Permanent)
+- **Base Directory**: `/path/to/claude/knowledge_base/`
+- **Structure**: Organized by domain: `/path/to/claude/knowledge_base/<domain>/`
+- **Purpose**: Reusable knowledge, patterns, solutions, configurations
+- **Audience**: Both Claude and human-readable
+- **Organization**: By domain (tools, web-development, databases, etc.) - max 2-3 levels deep
+
+### Folder Management
+- Always list existing folders first to check if a task folder already exists
+- If uncertain about task naming or folder reuse, ask the user
+- Create new task folder automatically if it doesn't exist
+- Consider knowledge base contributions during task work
+- **Archive completed projects**: Move finished tasks to `tasks_notes/archived/` subfolder
+- **Active projects only**: Keep only ongoing work in main `tasks_notes/` directory
+- **Archived location**: `/path/to/claude/tasks_notes/archived/`
+
+## Note-Taking Principles
+
+### What to Document
+1. **Project Context**
+   - Key project goals and requirements
+   - Important architectural decisions
+   - Coding patterns and conventions used
+   - Dependencies and their purposes
+   - Configuration details and environment setup
+
+2. **Task Progress**
+   - Current tasks and their status
+   - Completed milestones
+   - Pending items and next steps
+   - Blockers and their resolutions
+
+3. **User Preferences**
+   - Preferred coding styles and frameworks
+   - Specific tools and libraries to use/avoid
+   - Communication preferences
+   - Working patterns and habits
+
+4. **Important Discoveries** (Consider for Knowledge Base)
+   - Solutions to complex problems
+   - Debugging insights
+   - Performance optimizations
+   - Security considerations
+   - Integration patterns
+
+### When to Take Notes
+- **Start of each session**: Review existing notes, search knowledge base for relevant entries, surface applicable knowledge
+- **After solving complex problems**: Document the solution and approach
+- **When learning user preferences**: Record for future reference
+- **Before making architectural decisions**: Note the reasoning
+- **When encountering repeated patterns**: Standardize the approach
+- **End of significant work**: Summarize progress and next steps
+- **After discovering reusable knowledge**: Propose knowledge base contributions
+
+### Note Management
+1. **Regular Review**: Read notes at the beginning of each session
+2. **Keep Current**: Remove outdated information promptly
+3. **Organize Clearly**: Use clear headings and structure
+4. **Update Continuously**: Add information as you learn
+5. **Prioritize Relevance**: Focus on information that improves future performance
+
+## Notes Structure
+Use this template structure in `notes.md`:
+
+```markdown
+# Project Notes
+
+## Project Overview
+- Brief description of the project
+- Main goals and objectives
+- Key stakeholders or users
+
+## Technical Stack
+- Programming languages
+- Frameworks and libraries
+- Tools and services
+- Database and storage
+
+## Architecture & Patterns
+- Key architectural decisions
+- Code organization patterns
+- Design patterns in use
+- Naming conventions
+
+## Current Status
+- Active tasks
+- Recent completions
+- Known issues
+- Next priorities
+
+## User Preferences
+- Coding style preferences
+- Preferred tools and approaches
+- Communication style
+- Working patterns
+
+## Key Insights
+- Important solutions and approaches
+- Performance considerations
+- Security notes
+- Integration patterns
+
+## References
+- Important documentation links
+- Code examples
+- Decision records
+```
+
+## Behavioral Guidelines
+
+### Active Note-Taking
+- **Proactive**: Take initiative to update notes without being asked
+- **Comprehensive**: Capture both technical and contextual information
+- **Timely**: Update notes immediately when learning something important
+- **Self-improving**: Use notes to provide better assistance over time
+
+### Information Lifecycle
+1. **Capture**: Note important information as you encounter it
+2. **Organize**: Structure information logically and clearly
+3. **Review**: Reference notes when starting new tasks
+4. **Update**: Modify notes when circumstances change
+5. **Archive**: Move completed project folders to `tasks_notes/archived/` subfolder (preserves history while keeping main directory clean)
+
+### Quality Standards
+- Write notes in clear, concise language
+- Use specific examples when helpful
+- Include enough context for future understanding
+- Organize information hierarchically
+- Keep formatting consistent and readable
+
+## File Operations
+
+### Task Notes
+- Always list existing task folders in `/path/to/claude/tasks_notes/` before starting work
+- **Focus on active projects**: By default, only review folders in main `tasks_notes/` directory (exclude `archived/`)
+- Check if a relevant task folder already exists for the current work
+- If uncertain about task naming or which folder to use, ask the user
+- Create new task folder and `notes.md` file if they don't exist
+- Read existing notes from the appropriate task folder to understand current context
+- Update notes throughout the session as you learn
+- Ensure notes are saved after significant updates
+- **Archival**: When projects are completed, move their folders to `tasks_notes/archived/` for historical reference
+
+### Cross-Session Knowledge Discovery
+- At session start, analyze current working directory/project context
+- Search knowledge base for entries relevant to current work
+- Present relevant knowledge base entries to user: "Found relevant entries: [[Docker Optimization]], [[K8s Debugging]]"
+- Load context from applicable knowledge base entries to inform current session
+
+### Knowledge Base Curation
+- **What to Include**: Obscure tools, complex patterns, non-obvious solutions, tool configs, edge cases, personal projects, specialized setups
+- **What to Exclude**: Basic concepts (user is senior DevOps engineer), standard procedures, well-documented features
+- **Search First**: Always search existing knowledge base before proposing new entries
+- **Approval Levels**: urgent (auto-create during incidents), standard (ask at stopping points), batch (collect for session end)
+- **Format**: Human-readable with context, examples, and links to official docs
+- **Cross-referencing**: Link between task notes and knowledge base entries using [[links]]
+- **Maintenance**: When reading knowledge base entries, flag outdated content with `#needs_revision` tag
+- **Git Integration**: Auto-commit knowledge base changes with descriptive messages
+
+### Git Management
+- Knowledge base repository: `/path/to/claude/` (git initialized)
+- Auto-commit after approved knowledge base additions/updates
+- Use descriptive commit messages: "Add Docker networking troubleshooting to tools/"
+- Commit maintenance updates when adding `#needs_revision` tags
+- Consider batch commits for task notes vs individual commits for knowledge base changes
+
+## Privacy and Scope
+- Task notes are for Claude's use only
+- Knowledge base entries are human-readable and shareable
+- Focus on project-relevant information
+- Don't include sensitive personal information
+- Keep notes focused on improving work quality and efficiency
+
+Remember: The goal is to become progressively more helpful and effective by maintaining institutional memory across sessions. Treat this note-taking system as essential to providing excellent assistance.

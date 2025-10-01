@@ -1,0 +1,381 @@
+---
+allowed-tools:
+  - Read(**/*.md)
+  - Write(**/*.md)
+  - Edit(**/*.md)
+  - Glob(**/*) 
+  - LS(**/*) 
+  - Grep(**)
+  - Task
+description: Review and enhance knowledge base entries related to current conversation topic
+thinking-triggers:
+  - complexity: simple → standard budget
+  - complexity: complex → "think hard" (cross-domain analysis, gap identification)
+  - complexity: critical → "ultrathink" (architecture decisions, multi-domain restructuring)
+---
+
+# Knowledge Base Review & Enhancement
+
+Perform intelligent review of knowledge base entries related to the current conversation topic, identify knowledge gaps, and create actionable plans for knowledge base improvements.
+
+## Your Task
+
+You are a knowledge base curator specialist. Your job is to:
+
+1. **Identify the current conversation topic** from context or user input
+2. **Map topic to knowledge base domains** in `/path/to/claude/knowledge_base/`
+3. **Analyze existing knowledge base entries** for the relevant domains
+4. **Cross-reference task notes insights** to identify knowledge worth promoting
+5. **Create improvement plans** for knowledge base enhancements
+6. **Present plans to user** for approval before making changes
+7. **Apply thinking budget** based on task complexity:
+   - **Simple**: Single domain updates, metadata fixes → standard budget
+   - **Complex**: Cross-domain analysis, knowledge gaps → think hard
+   - **Critical**: Architecture decisions, major restructuring → ultrathink
+
+### Key Principles (Knowledge Base Focus)
+
+- **Human-readable content** with context, examples, and references
+- **Permanent, reusable knowledge** that serves future sessions
+- **Obsidian-compatible formatting** with wikilinks, metadata, and callouts
+- **Search-first workflow** - check existing entries before proposing new ones
+- **Cross-domain connectivity** - link related concepts for graph visualization
+- **Senior DevOps context** - focus on complex patterns, edge cases, specialized setups
+
+## Workflow
+
+### Step 1: Enhanced Topic Detection and Domain Mapping
+
+**Auto-detect complexity and apply thinking budget:**
+- Multiple domains + knowledge gaps = think hard
+- Architecture restructuring = ultrathink  
+- Single domain maintenance = standard
+
+Parse and detect the conversation topic:
+!topic="${1:-$(echo "Analyze conversation context to identify main topic")}"
+
+**Topic Detection Strategy (when no argument provided):**
+1. **Conversation Analysis**: Extract key terms from recent messages
+2. **Working Directory Context**: Check current directory for project clues
+3. **Recent Task Activity**: Identify most recently modified task folders
+4. **Knowledge Domain Signals**: Look for technical domains being discussed
+
+**Scope Determination:**
+- **Default**: Only knowledge domains relevant to current topic
+- **Explicit topic**: `/review-knowledge kubernetes` - focus on devops domain
+- **Comprehensive**: `/review-knowledge --all` - review all knowledge domains
+- **Quick mode**: `/review-knowledge --quick` - minimal analysis on relevant domains only
+
+!echo "Reviewing knowledge base for topic: $topic"
+!echo "Scope: Current topic domains only (use --all for comprehensive review)"
+
+### Step 2: Topic-to-Knowledge-Domain Mapping
+
+**Smart Domain Selection Strategy**:
+
+1. **Topic-to-Domain Mapping**:
+   - Map current topic to relevant knowledge base domains
+   - Skip domains that don't relate to current work
+   - Prioritize domains with recently updated entries for ambiguous topics
+
+2. **Domain Relevance Filtering**:
+
+   - When proposing where a topic belongs in the knowledge base, treat the mappings below as **suggestions**. They’re meant to steer triage, not enforce it. If a topic straddles multiple areas, pick the most helpful domain(s) and adjust as you see fit.
+
+   - **Heuristics (examples, non-exhaustive):**
+     - **Claude / agents / commands / knowledge ops** → *tools*
+       - _Often pairs well with:_ `claude-code-notifications-and-hooks.md`, `knowledge-management-systems.md`.
+     - **Kubernetes / clusters / Velero / backups / MinIO / infra & DevOps** → *devops*
+       - _Often pairs well with:_ `velero-minio-integration.md`.
+     - **Docker / containers / deployments / CI/CD** → *devops*, sometimes *tools*.
+     - **Databases (SQL/Postgres/Mongo)** → *databases* (create if missing).
+     - **Web (frontend/backend/API/JavaScript/React)** → *web-development* (create if missing).
+
+   - **Fallbacks:**
+     - If nothing fits cleanly, skim note content and tags to infer the most relevant domain.
+     - If a topic is broad or cross-cutting, suggest **two** candidate domains and pick one during cleanup.
+     - If the domain doesn’t exist yet but is warranted, propose creating it with a minimal stub and links.
+
+   > **Note:** These are starting points. Prefer clarity and future discoverability over strict adherence to any mapping.
+
+3. **Knowledge Entry Discovery**:
+   - For each target domain, list existing knowledge base entries
+   - Score entries by topic relevance based on content analysis
+   - Include related entries that might benefit from cross-referencing
+   - Report which domains and entries were included vs excluded
+
+!echo "Target domains for '$topic': ${target_domains[*]}"
+!echo "Relevant knowledge entries: ${knowledge_files[*]}"
+!echo "Excluded domains: [list of skipped domains with reasons]"
+
+### Step 3: Knowledge Base Analysis (Target Domains Only)
+
+**IMPORTANT**: Only analyze domains/entries identified in Step 2. Skip all irrelevant knowledge areas entirely.
+
+For each TARGET knowledge entry, perform deep analysis:
+
+#### A. Knowledge Entry Health Check
+```markdown
+**Knowledge Entry**: domain/filename.md
+**Created**: [creation date from metadata]
+**Last Updated**: [last updated date from metadata]
+**Last Read**: [when Claude last read this]
+**Age Analysis**: X days/months since last update
+**Content Status**: [current/outdated/incomplete/comprehensive]
+**Domain Relevance**: [high/medium/low for current topic]
+```
+
+#### B. Content Currency Assessment
+
+**Outdated Knowledge Indicators:**
+- References to deprecated tools/versions
+- Broken links to external resources
+- Instructions that no longer work due to software changes
+- Missing coverage of newer approaches/tools
+- Obsolete configuration examples
+- Outdated best practices that have been superseded
+
+**Knowledge Gaps Detection:**
+- Compare with insights from recent task notes work
+- Identify patterns/solutions discovered that aren't documented
+- Find specialized configurations not covered in knowledge base
+- Spot edge cases encountered that could help future sessions
+- Locate integration patterns worth preserving
+
+**Cross-Reference Opportunities:**
+- Find related concepts that should be linked with [[wikilinks]]
+- Identify hub pages that could improve graph connectivity
+- Spot opportunities for knowledge consolidation
+- Find complementary entries across domains
+
+#### C. Knowledge Base Performance Review
+
+**Content Quality Checks:**
+- Adherence to Obsidian formatting standards (metadata, callouts, wikilinks)
+- Human readability and context sufficiency
+- Example richness and practical applicability
+- Reference completeness and link validity
+- Cross-domain connectivity via [[wikilinks]]
+
+**Usefulness Assessment:**
+- How well does this knowledge serve both Claude and human readers?
+- Does the content provide genuine insights beyond basic documentation?
+- Are the examples practical and working?
+- Is the knowledge at the right level for senior DevOps context?
+
+### Step 4: Task Notes Cross-Analysis
+
+**Identify Promotion-Worthy Insights**: Scan relevant task notes for knowledge that should be promoted to knowledge base:
+
+#### A. From Task Notes to Knowledge Base
+```markdown
+**Task Folder**: [folder_name]
+**Relevant Insights Found**:
+- Complex problem-solution patterns worth preserving
+- Non-obvious troubleshooting approaches discovered
+- Tool configurations not well-documented elsewhere
+- Integration patterns and edge cases encountered
+- Specialized setups specific to user's environment
+
+**Knowledge Base Promotion Candidates**:
+- New entry needed: [proposed title and domain]
+- Enhancement opportunity: [existing entry to expand]
+- Cross-reference gap: [entries that should link to each other]
+```
+
+#### B. Pattern Recognition Across Projects
+- Recurring themes across multiple task folders
+- Consistent tool preferences and configurations
+- Common troubleshooting patterns
+- Integration approaches that work well together
+
+### Step 5: Improvement Plan Generation
+
+Create comprehensive improvement plans without making actual changes:
+
+#### A. New Knowledge Base Entries Needed
+
+For each new entry identified:
+```markdown
+**Proposed Entry**: `domain/proposed-filename.md`
+**Justification**: [Why this knowledge deserves permanent storage]
+**Content Source**: [Which task notes contain the insights]
+**Target Audience**: [Human-readable, senior DevOps context]
+**Key Topics to Cover**:
+- [Topic 1]: [Brief description]
+- [Topic 2]: [Brief description]
+- [Topic 3]: [Brief description]
+**Related Entries**: [Existing entries this should link to]
+**Priority**: [High/Medium/Low based on reusability]
+```
+
+#### B. Existing Entry Enhancement Plans
+
+For each entry requiring updates:
+```markdown
+**Knowledge Entry**: `domain/filename.md`
+**Enhancement Type**: [Update/Expand/Restructure/Deprecate]
+**Specific Improvements Needed**:
+- Reword section: [Section name] - [Why and general direction]
+- Add new findings: [New insights to incorporate]
+- Mark as outdated: [Specific content to flag or remove]
+- Enhance examples: [Add practical examples from recent work]
+- Fix cross-references: [Missing [[wikilinks]] to add]
+- Update metadata: [Tags, related entries, dates]
+**Content Sources**: [Which task notes provide the new insights]
+**Impact**: [How this improves knowledge base utility]
+```
+
+#### C. Structural Improvements
+
+For knowledge base organization:
+```markdown
+**Structural Changes Needed**:
+- Domain organization: [Suggest new domains or reorganization]
+- Hub page creation: [Major topics needing central hub pages]
+- Cross-domain linking: [Opportunities to connect related concepts]
+- Tag system enhancement: [New tags needed for better discovery]
+- Obsidian graph optimization: [Changes to improve graph visualization]
+```
+
+### Step 6: Plan Presentation & Agent Deployment
+
+#### A. Present Comprehensive Plan to User
+
+Create detailed improvement plan report:
+```markdown
+# Knowledge Base Enhancement Plan - $(date)
+
+**Topic Focus**: "$topic"
+**Domains Analyzed**: [X domains]
+**Entries Reviewed**: [X entries] 
+**Task Notes Cross-Referenced**: [X folders]
+
+## Summary
+- **New entries needed**: [X entries]
+- **Existing entries to enhance**: [X entries]
+- **Maintenance actions**: [X items]
+- **Structural improvements**: [X items]
+
+## Priority Actions
+### High Priority (Knowledge gaps for current work)
+[List highest-impact improvements]
+
+### Medium Priority (General improvements)  
+[List valuable but non-urgent improvements]
+
+### Low Priority (Nice-to-have enhancements)
+[List minor improvements for future consideration]
+
+## Detailed Improvement Plans
+[Include all the specific plans from Step 5]
+
+## Resource Requirements
+- **New content creation**: [Estimated effort]
+- **Content updates**: [Estimated effort] 
+- **Cross-referencing work**: [Estimated effort]
+- **Research/validation needed**: [External resources to verify]
+```
+
+#### B. Deploy Knowledge Base Curator Agent (On Approval)
+
+**ONLY after user approves the plan**, deploy the specialized curator agent:
+
+!echo "User approved knowledge base enhancements. Deploying Knowledge Base Curator agent..."
+
+Use Task tool with custom agent: `knowledge-base-curator`
+Agent file: `$HOME/.claude/agents/knowledge-base-curator.md`
+
+**Agent will**:
+- Read the detailed improvement plan
+- Implement approved new knowledge base entries following Obsidian standards
+- Update existing entries per the approved enhancement plans
+- Add proper metadata, wikilinks, and cross-references
+- Maintain consistent formatting and human readability
+- Create git commits for knowledge base changes
+
+### Step 7: Final Summary
+
+**Provide focused completion summary:**
+```
+Knowledge Base Review Complete - Topic: "$topic"
+🎯 Domains analyzed: [X domains] (focused scope)
+📖 Knowledge entries reviewed: [X entries]
+🚫 Skipped domains: [X domains] (not relevant to current topic)
+📋 Improvement plan created: [X new entries + X enhancements]
+✅ Plan presented to user for approval
+[If approved] 🤖 Knowledge Base Curator agent deployed
+🧠 Result: Knowledge base enhancement roadmap created for current topic
+```
+
+**Key Benefits of Topic-Focused Knowledge Review:**
+- 🎯 **Relevant insights** (only analyze knowledge domains related to current work)
+- 📚 **Comprehensive coverage** (both existing entries and new opportunities)
+- 🔗 **Cross-reference optimization** (improve Obsidian graph connectivity)
+- 🏗️ **Structured planning** (clear roadmap before making changes)
+- ✅ **Approval workflow** (user controls knowledge base changes)
+
+## Advanced Features
+
+### Smart Prioritization (Topic-Focused)
+Prioritize knowledge enhancement based on:
+- **Topic relevance score** (primary factor)
+- Knowledge age and staleness indicators within current domain
+- Strategic importance to current work
+- Cross-project reusability potential
+- Gap severity (missing vs outdated knowledge)
+
+### Pattern Recognition
+Identify systemic knowledge opportunities:
+- Common solutions across multiple task folders
+- Frequently referenced but undocumented patterns
+- Tools/configurations that appear in multiple projects
+- Integration approaches that work consistently well
+- Troubleshooting patterns worth preserving
+
+### Knowledge Base Health Monitoring
+Track knowledge base quality:
+- Entry currency (last updated dates)
+- Cross-reference completeness (orphaned vs well-connected entries)
+- Content depth vs breadth balance
+- Human readability scores
+- Example/reference completeness
+
+## Configuration Options
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `review_mode` | topic-focused | topic-focused\|comprehensive\|domain-specific |
+| `include_task_insights` | true | Cross-reference task notes for promotion opportunities |
+| `min_staleness_days` | 30 | Minimum days before flagging knowledge as potentially stale |
+| `auto_plan` | true | Generate improvement plans automatically |
+| `domain_filtering` | true | Only review domains relevant to current topic |
+| `cross_reference_analysis` | true | Analyze opportunities for [[wikilink]] improvements |
+
+## Usage Examples
+
+```bash
+# Review current conversation topic domains (DEFAULT - focused)
+/review-knowledge
+
+# Review specific domain knowledge
+/review-knowledge kubernetes
+/review-knowledge tools
+/review-knowledge devops
+
+# Review all knowledge domains (comprehensive)
+/review-knowledge --all
+
+# Quick domain review (minimal cross-analysis)  
+/review-knowledge --quick
+
+# Domain-specific with task insights disabled
+/review-knowledge devops --no-task-insights
+```
+
+**Key Benefits**:
+- 📋 **Strategic planning** - comprehensive improvement roadmap before changes
+- 🎯 **Topic-focused** - relevant knowledge domains for current work
+- 🔗 **Cross-reference optimization** - improve Obsidian graph connectivity
+- 🤖 **Agent-assisted** - specialized curator handles approved improvements
+- 📚 **Knowledge preservation** - promote valuable task insights to permanent knowledge

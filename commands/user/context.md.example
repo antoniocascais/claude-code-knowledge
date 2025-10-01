@@ -1,0 +1,28 @@
+---
+description: Load context from the closest-matching topic folder (fuzzy)
+argument-hint: TOPIC
+allowed-tools: Read, LS, Glob, Grep, Bash
+---
+
+Use **fuzzy matching** to resolve $ARGUMENTS to a folder under:
+1) `/path/to/claude/tasks_notes/` (active projects only)
+2) `/path/to/claude/knowledge_base/`
+
+### Matching rules
+- Normalize: lowercase; trim; spaces/underscores → hyphens; strip trailing punctuation.
+- **Prefer active over archived**: Prioritize `tasks_notes/` active folders over `tasks_notes/archived/`
+- Prefer `tasks_notes/` over `knowledge_base/` if both match.
+- **Skip archived by default**: Exclude `tasks_notes/archived/` unless explicitly requested
+- Consider **path contains / starts-with** matches (hyphen/underscore-insensitive).
+- Consider **content matches**: any `*.md` whose content matches the query words.
+- If multiple plausible matches exist, show a **ranked list** and choose the best; if uncertain, ask.
+
+### Load & summarize
+- For the chosen folder, read all `*.md` (ignore `.git/`, `node_modules/`, build artifacts).
+- Summarize: purpose/context, active tasks, recent updates, blockers, next actions.
+- End with `Loaded from: <path>` and a 3–5 bullet “Now up to speed” summary.
+
+### If nothing suitable
+- Say no strong match found; list top candidates from both roots and propose likely intents.
+
+> Hint: If available, use `ag` to quickly find both path-based and content-based candidates.

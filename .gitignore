@@ -1,0 +1,8 @@
+# Personal configuration files (use .example versions as templates)
+CLAUDE.md
+commands/review-notes.md
+commands/review-knowledge.md
+commands/user/context.md
+
+# Generation script (personal use only)
+bin/generate-examples.sh

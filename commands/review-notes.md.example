@@ -1,0 +1,338 @@
+---
+allowed-tools:
+  - Read(**/*.md)
+  - Write(**/*.md)
+  - Edit(**/*.md)
+  - Glob(**/*)
+  - LS(**/*)
+  - Grep(**)
+description: Review and maintain task notes (Claude-only) related to current conversation topic
+thinking-triggers:
+  - complexity: simple → standard budget
+  - complexity: complex → "think" (project status analysis, context optimization)
+  - complexity: critical → "think hard" (ambiguous states, major restructuring)
+---
+
+# Task Notes Review & Maintenance
+
+Perform an intelligent review of task notes (Claude-only) related to the current conversation topic, identifying outdated project information, completed tasks, and maintenance needs.
+
+## Your Task
+
+You are a task notes maintenance specialist. Your job is to:
+
+1. **Identify the current conversation topic** from context or user input
+2. **Locate relevant task notes** in `/path/to/claude/tasks_notes/`
+3. **Apply ROT Analysis** (Redundant, Outdated, Trivial content detection)
+4. **Update task status** and project context
+5. **Clean up completed/irrelevant information** for better Claude performance
+6. **Apply thinking budget** based on task complexity:
+   - **Simple**: Obvious updates, template fixes → standard budget
+   - **Complex**: Project status analysis, context optimization → think
+   - **Critical**: Ambiguous states, major restructuring → think hard
+
+### Key Principles (Task Notes Focus)
+- **Context maintenance** for better Claude performance across sessions
+- **Remove completed project artifacts** that no longer serve a purpose
+- **Update project status** to reflect current reality
+- **ROT elimination** - Remove Redundant, Outdated, Trivial project information
+- **Optimize for Claude readability** and session efficiency
+
+## Workflow
+
+### Step 1: Enhanced Topic Detection and Scope
+
+**Auto-detect complexity and apply thinking budget:**
+- Ambiguous project states + context conflicts = think hard
+- Multi-folder status analysis = think
+- Simple template fixes = standard
+
+Parse and detect the conversation topic:
+!topic="${1:-$(echo "Analyze conversation context to identify main topic")}"
+
+**Topic Detection Strategy (when no argument provided):**
+1. **Conversation Analysis**: Extract key terms from recent messages
+2. **Working Directory Context**: Check current directory for project clues
+3. **Recent Activity**: Identify most recently modified task folders
+4. **File Patterns**: Look for active file operations or references
+
+**Scope Determination:**
+- **Default**: Only folders relevant to current topic (excludes `archived/` subfolder)
+- **Explicit topic**: `/review-notes kubernetes` - folders matching "kubernetes"
+- **Comprehensive**: `/review-notes --all` - review all folders
+- **Quick mode**: `/review-notes --quick` - minimal checks on relevant folders only
+- **Archive exclusion**: By default, skip `tasks_notes/archived/` (completed projects)
+
+!echo "Reviewing notes for topic: $topic"
+!echo "Scope: Current topic only (use --all for comprehensive review)"
+
+### Step 2: Topic-Filtered Discovery Phase
+
+**Smart Folder Selection Strategy**:
+
+1. **Topic-to-Folder Mapping**:
+   - Map current topic to relevant task folders using keyword matching
+   - **Skip archived projects**: Exclude `tasks_notes/archived/` by default (focus on active work)
+   - Skip folders that don't relate to current work
+   - Prioritize recently active folders for ambiguous topics
+
+2. **Folder Relevance Filtering**
+
+   - Treat the mappings below as **suggestions** to speed up triage, not rigid rules. If a note fits multiple places, pick the most helpful folder(s) and adjust as you go.
+
+   - **Heuristics (examples, non-exhaustive):**
+     - **Claude / agents / commands / knowledge ops / maintenance / system notes**
+       - _Often belongs in:_ `claude-knowledge-system-design`
+     - **Kubernetes / clusters / masters / nodes**
+       - _Often belongs in:_ `k8s_master_vm`
+     - **Zoom / Wayland / crashes / troubleshooting**
+       - _Often belongs in:_ `zoom-wayland-crash-troubleshoot`
+
+   - **Fallbacks:**
+     - If unsure, suggest **two candidate folders** and make the final call during cleanup.
+     - For cross-cutting notes, record both candidates (link from the note) and choose a primary during cleanup.
+     - If no folder clearly fits, propose creating a **new, minimally scoped** folder and link it from related areas.
+     - To review everything, you can list **all** task-note folders (e.g., `tasks_notes/`) and narrow from there.
+
+   > **Note:** These are starting points to keep things moving. Optimize for future discoverability over strict adherence to any mapping.
+
+3. **Relevance Validation**:
+   - For each target folder, verify actual relevance by scanning `notes.md` content
+   - Score folders by topic match strength
+   - Skip folders that are clearly completed/archived for the current topic
+   - Apply Step 1 policies during validation (e.g., exclude `tasks_notes/archived/`).
+   - Report which folders were included vs excluded
+
+!echo "Target folders for '$topic': ${target_folders[*]}"
+!echo "Excluded folders: [list of skipped folders with reasons]"
+
+### Step 3: Focused ROT Analysis (Target Folders Only)
+
+**IMPORTANT**: Only analyze folders identified in Step 2. Skip all irrelevant folders entirely.
+
+For each TARGET folder, perform deep analysis:
+
+#### A. Task Context Health Check
+```markdown
+**Task Folder**: folder_name/
+**Created**: [folder creation date]
+**Last Modified**: [most recent file change]
+**Age Analysis**: X days/months old
+**Project Status**: [active/completed/abandoned/superseded]
+**Relevance**: [high/medium/low/none]
+```
+
+#### B. Content Freshness Assessment
+
+**Outdated Task Information Indicators:**
+- Completed tasks still marked as "in progress"
+- Project requirements that have changed
+- Dependencies that are no longer relevant
+- User preferences that have evolved
+- Technical approaches that have been superseded
+- Deadlines and milestones that have passed
+
+**Redundancy Detection:**
+- Compare with similar task folders for duplicate project context
+- Identify overlapping task information across folders
+- Flag repeated project setups or configurations
+- Check for multiple folders covering the same project
+
+**Triviality Assessment:**
+- Evaluate task information relevance to current work
+- Identify task contexts that no longer serve Claude's performance
+- Flag completed projects with no reusable context
+- Remove test projects or experimental task folders
+
+#### C. Task Performance Review
+
+**Context Quality Checks:**
+- Accuracy of project status information
+- Completeness of task tracking
+- Clarity of current priorities and blockers
+- Usefulness for Claude's session context
+- Adherence to task notes template structure
+
+**Performance Assessment:**
+- How well does this context help Claude assist the user?
+- Does the information improve session continuity?
+- Is the task tracking still meaningful?
+- Are user preferences accurately captured?
+
+### Step 4: Maintenance Actions
+
+For each note reviewed, take appropriate action:
+
+#### A. Immediate Fixes
+- **Update task status**: Mark completed tasks as "completed"
+- **Remove dead projects**: Archive or delete abandoned task folders
+- **Correct project status**: Fix outdated "Current Status" sections
+- **Clean up blockers**: Remove resolved blockers from notes
+
+#### B. Flag for Cleanup
+Identify folders/content for action:
+- **Archive candidate** - Project completed, no reusable context
+- **Consolidation needed** - Similar projects should be merged
+- **Update required** - Project context needs refreshing
+- **Duplicate project** - Redundant with other task folders
+- **Performance impact** - Large/complex notes slowing Claude down
+
+#### C. Structural Improvements
+- **Apply task notes template**: Ensure consistent structure across folders
+- **Update "Current Status"**: Reflect actual project state
+- **Refresh "Next Priorities"**: Remove completed items, add new ones
+- **Optimize for Claude**: Remove verbose details, keep essential context
+
+### Step 5: Immediate Action & Agent Deployment
+
+#### A. Immediate Simple Fixes (Auto-Applied)
+
+**Apply these fixes instantly without asking:**
+
+1. **Archive Empty/Trivial Folders**:
+   - Remove folders with only template content
+   - Archive folders for clearly completed projects with no reusable context
+   - Delete test/experimental folders that served their purpose
+
+2. **Update Task Status**:
+   - Mark obviously completed tasks as "completed" in Current Status
+   - Remove resolved blockers from notes
+   - Update "Last Updated" timestamps
+
+3. **Clean Obvious ROT**:
+   - Remove duplicate project information
+   - Clean up outdated priority lists
+   - Fix formatting inconsistencies
+
+!echo "Applied immediate fixes to X folders"
+
+#### B. Complex Maintenance (Deploy Agent)
+
+For complex issues requiring judgment, create a focused maintenance report and deploy an agent:
+
+**Create targeted report**: `tasks_notes/[RELEVANT_FOLDER]/maintenance-report-$(date +%Y%m%d-%H%M).md`
+
+**Report contains**:
+```markdown
+# Task Maintenance Report - $(date)
+
+**Target Folder**: [folder_name]
+**Issues Found**: X
+**Action Required**: [Update context | Consolidate | Major cleanup]
+
+## Issues to Fix:
+1. **Project Status Mismatch**: [description]
+   - Current notes say: [X]
+   - Reality appears to be: [Y]
+   - Action: [Update/clarify/verify with user]
+
+2. **Outdated Context**: [description]
+   - Outdated info: [specific details]
+   - Action: [Remove/update/consolidate]
+
+[Continue for each issue...]
+
+## Recommended Actions:
+- [ ] Immediate: [list]
+- [ ] Requires user input: [list]
+- [ ] Future cleanup: [list]
+```
+
+**Deploy Task Notes Cleaner Agent** (Target folders only):
+!echo "Deploying Task Notes Cleaner agent for complex maintenance in relevant folders..."
+
+**Scope**: Only deploy agent for folders identified in Step 2 target_folders list
+**Skip**: All folders not related to current topic
+
+Use Task tool with custom agent: `task-notes-cleaner`
+Agent file: `$HOME/.claude/agents/task-notes-cleaner.md`
+
+**Agent will**:
+- Read maintenance reports only in topic-relevant task folders
+- Apply straightforward fixes to current topic context only
+- Ask user about project status only for current work
+- Optimize notes structure for Claude's session performance on current topic
+- Ignore completed/irrelevant projects entirely
+
+### Step 6: Final Summary
+
+**Provide focused completion summary:**
+```
+Task Notes Review Complete - Topic: "$topic"
+📁 Target folders: [X folders] (focused scope)
+🚫 Skipped folders: [X folders] (not relevant to current topic)
+✅ Immediate fixes applied: [X items]
+✅ Folders archived: [X folders]  
+✅ Agent deployed for: [X complex issues]
+🎯 Result: Current topic context optimized for Claude session performance
+```
+
+**Key Benefits of Topic Filtering:**
+- ⚡ Faster execution (only relevant folders processed)
+- 🎯 Better focus (current work context maintained)
+- 🧹 Cleaner results (no noise from unrelated projects)
+- 💡 Smarter maintenance (agent focuses on current topic only)
+
+**No additional reports or manual steps required - all actions taken immediately.**
+
+## Advanced Features
+
+### Smart Prioritization (Topic-Focused)
+Prioritize review based on:
+- **Topic relevance score** (primary factor)
+- Note age and staleness indicators within current topic
+- Strategic importance to current work only
+- Recent activity in topic-related folders
+- Complexity of required updates for current context
+
+### Pattern Recognition
+Identify systemic issues:
+- Common outdated patterns across notes
+- Frequently broken link sources
+- Topics requiring regular maintenance
+- Quality gaps in knowledge coverage
+
+### Maintenance Scheduling
+Suggest optimal review cycles:
+- High-change topics: Monthly review
+- Stable reference material: Quarterly review
+- Archive candidates: Annual review
+- Critical workflow notes: Real-time maintenance
+
+## Configuration Options
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `review_mode` | topic-focused | topic-focused\|comprehensive\|quick |
+| `auto_fix` | true | Apply immediate fixes without asking |
+| `min_age_days` | 14 | Minimum age before flagging as stale |
+| `deploy_agent` | true | Use agent for complex maintenance |
+| `topic_filtering` | true | Only review folders relevant to current topic |
+| `archive_completed` | true | Auto-archive clearly completed projects |
+
+## Usage Examples
+
+```bash
+# Review current conversation topic only (DEFAULT - focused)
+/review-notes
+
+# Review specific topic (only relevant folders)
+/review-notes kubernetes
+/review-notes backup
+/review-notes command
+
+# Review all folders (old comprehensive behavior)  
+/review-notes --all
+
+# Quick review of current topic (minimal checks)
+/review-notes --quick
+
+# Manual fixes only (no agent deployment)
+/review-notes --no-agent
+```
+
+**Key Benefits**: 
+- ⚡ **Immediate action** - fixes applied instantly, no friction
+- 🤖 **Smart agent deployment** - complex issues handled automatically
+- 🎯 **Performance focused** - optimizes Claude's session effectiveness
+- 🧹 **Zero maintenance debt** - no reports to review later
