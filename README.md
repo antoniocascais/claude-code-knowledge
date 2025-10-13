@@ -13,7 +13,7 @@ cd claude-code-knowledge
 
 ### 2. Run the Setup Script
 
-The setup script will create your personal configuration files from the `.example` templates:
+The setup script will generate your personal configuration files from the `.example` templates directly inside the Claude directory you specify:
 
 ```bash
 ./bin/setup.sh /path/to/your/claude/folder
@@ -32,17 +32,23 @@ The setup script will create your personal configuration files from the `.exampl
 ```
 
 **What it does:**
-- Reads all `.example` template files
+- Reads all `.example` template files in the repository
+- Normalizes the destination path so relative and `~` inputs work everywhere
 - Replaces `/path/to/claude` with your provided path
 - Replaces `$HOME/.claude` with your actual home directory
-- Creates the actual configuration files:
-  - `CLAUDE.md` - Main note-taking system configuration
-  - `commands/review-notes.md` - Task notes maintenance command
-  - `commands/review-knowledge.md` - Knowledge base review command
-  - `commands/user/context.md` - Context loading command
-- Prompts for confirmation before overwriting existing files
+- Creates/updates the following files inside your Claude directory:
+  - `<CLAUDE_PATH>/CLAUDE.md` - Main note-taking system configuration
+  - `<CLAUDE_PATH>/commands/review-notes.md` - Task notes maintenance command
+  - `<CLAUDE_PATH>/commands/review-knowledge.md` - Knowledge base review command
+  - `<CLAUDE_PATH>/commands/user/context.md` - Context loading command
+- Copies every file from the repository's `agents/` directory into `<CLAUDE_PATH>/agents/`
+- Ensures the required subfolders exist before writing each file
+- Prompts for confirmation before overwriting any existing destination file
+- Offers to create symlinks into `~/.claude` (or another directory you choose), asking before replacing anything already there
 
 ### 3. Create Required Directories
+
+The setup script does not create your working data directories (only the configuration files). Create them once:
 
 ```bash
 # Replace with your path from step 2
@@ -52,21 +58,21 @@ mkdir -p /path/to/your/claude/folder/knowledge_base
 
 ### 4. Configure Claude Code
 
-The setup script creates files that need to be imported by Claude Code. The recommended approach is to use symlinks:
+If you opted into symlink creation during setup, this step is already complete. Otherwise, link your generated files into Claude Code manually:
 
 ```bash
-# Create symlinks from ~/.claude to your repository
-ln -s /path/to/claude-code-knowledge/CLAUDE.md ~/.claude/CLAUDE.md
-ln -s /path/to/claude-code-knowledge/agents ~/.claude/agents
-ln -s /path/to/claude-code-knowledge/commands ~/.claude/commands
+# Create symlinks from ~/.claude to your Claude folder
+ln -s /path/to/your/claude/folder/CLAUDE.md ~/.claude/CLAUDE.md
+ln -s /path/to/your/claude/folder/agents ~/.claude/agents
+ln -s /path/to/your/claude/folder/commands ~/.claude/commands
 ```
 
 **Example:**
 ```bash
-# If you cloned to ~/Documents/claude-code-knowledge
-ln -s ~/Documents/claude-code-knowledge/CLAUDE.md ~/.claude/CLAUDE.md
-ln -s ~/Documents/claude-code-knowledge/agents ~/.claude/agents
-ln -s ~/Documents/claude-code-knowledge/commands ~/.claude/commands
+# If you ran setup with /home/user/Documents/claude
+ln -s /home/user/Documents/claude/CLAUDE.md ~/.claude/CLAUDE.md
+ln -s /home/user/Documents/claude/agents ~/.claude/agents
+ln -s /home/user/Documents/claude/commands ~/.claude/commands
 ```
 
 **Benefits of symlinks:**
