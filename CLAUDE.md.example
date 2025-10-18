@@ -61,7 +61,7 @@ You are instructed to maintain a comprehensive note-taking system to improve tas
    - Integration patterns
 
 ### When to Take Notes
-- **Start of each session**: Review existing notes, search knowledge base for relevant entries, surface applicable knowledge
+- **When context is needed**: After user asks a question, assess if notes/knowledge base would improve your answer, then read relevant entries
 - **After solving complex problems**: Document the solution and approach
 - **When learning user preferences**: Record for future reference
 - **Before making architectural decisions**: Note the reasoning
@@ -70,11 +70,60 @@ You are instructed to maintain a comprehensive note-taking system to improve tas
 - **After discovering reusable knowledge**: Propose knowledge base contributions
 
 ### Note Management
-1. **Regular Review**: Read notes at the beginning of each session
+1. **On-Demand Review**: Read notes only when needed to answer user questions or provide context
 2. **Keep Current**: Remove outdated information promptly
 3. **Organize Clearly**: Use clear headings and structure
 4. **Update Continuously**: Add information as you learn
 5. **Prioritize Relevance**: Focus on information that improves future performance
+
+## Code Navigation Tools
+
+### ast-grep - Structural Code Search
+ast-grep is a powerful AST-based tool for navigating codebases structurally, not textually. Use it when you need precise, syntax-aware code search.
+
+#### When to Use ast-grep
+- **Finding code structures**: Functions, classes, methods, interfaces by signature
+- **Pattern-based search**: Match code patterns with meta-variables
+- **Cross-language navigation**: Works consistently across 30+ languages
+- **Structural queries**: When grep/regex would be too fragile
+
+#### Pattern Syntax
+- `$VAR` - matches any single AST node (variable name)
+- `$$$ARGS` - matches zero or more nodes (function arguments, statements)
+- Patterns use actual code syntax, not regex
+
+#### Examples by Use Case
+*(Examples below tested with ast-grep v0.39.5)*
+
+**Find function definitions:**
+```bash
+ast-grep --pattern 'function $NAME($$$ARGS) { $$$ }' --lang js
+ast-grep --pattern 'def $NAME($$$ARGS):' --lang python
+ast-grep --pattern 'func $NAME($$$PARAMS) { $$$ }' --lang go
+```
+
+**Find class declarations:**
+```bash
+ast-grep --pattern 'class $NAME { $$$ }' --lang js
+ast-grep --pattern 'class $NAME:' --lang python
+```
+
+**Find method calls:**
+```bash
+ast-grep --pattern '$OBJ.$METHOD($$$ARGS)' --lang js
+```
+
+**Find imports/requires:**
+```bash
+ast-grep --pattern 'import $NAME from $SOURCE' --lang js
+ast-grep --pattern 'from $MODULE import $NAME' --lang python
+```
+
+#### Tool Selection Guide
+- **ast-grep**: Structural code patterns (functions, classes, method signatures)
+- **Grep**: Content search (strings, comments, configuration values)
+- **Glob**: File name patterns (*.js, src/**/*.py)
+- **Read**: Known file paths or small file sets
 
 ## Notes Structure
 Use this template structure in `notes.md`:
@@ -145,6 +194,15 @@ Use this template structure in `notes.md`:
 - Organize information hierarchically
 - Keep formatting consistent and readable
 
+### Multi-Question Protocol
+When asking the user multiple questions:
+- **Tag each question**: Use Q1, Q2, Q3, etc. to number questions clearly
+- **Makes responses easier**: User can reference specific questions by number
+- **Example format**:
+  - "Q1: Do you want to use TypeScript or JavaScript?"
+  - "Q2: Should I include tests?"
+  - "Q3: What port should the server run on?"
+
 ## File Operations
 
 ### Task Notes
@@ -159,10 +217,11 @@ Use this template structure in `notes.md`:
 - **Archival**: When projects are completed, move their folders to `tasks_notes/archived/` for historical reference
 
 ### Cross-Session Knowledge Discovery
-- At session start, analyze current working directory/project context
-- Search knowledge base for entries relevant to current work
-- Present relevant knowledge base entries to user: "Found relevant entries: [[Docker Optimization]], [[K8s Debugging]]"
-- Load context from applicable knowledge base entries to inform current session
+- **Reactive approach**: Wait for user's first question before accessing notes
+- **Context assessment**: Determine if notes/knowledge base would improve your answer
+- **Targeted retrieval**: Search for specific relevant entries based on question topic
+- **Efficiency**: Avoid reading notes when they're not needed for the task
+- **Present findings**: If you found relevant entries, mention them: "I found relevant notes from [[Previous Work]]"
 
 ### Knowledge Base Curation
 - **What to Include**: Obscure tools, complex patterns, non-obvious solutions, tool configs, edge cases, personal projects, specialized setups

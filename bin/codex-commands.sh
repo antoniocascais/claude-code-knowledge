@@ -239,13 +239,13 @@ codex-security () {
 
   # Execute with extra codex arguments in non-interactive mode
   if [[ "$silent" == true ]]; then
-    # Redirect output to /dev/null when silent mode is enabled
+    # Redirect both stdout and stderr when silent mode is enabled
     if (( ${#prompt} > 100000 )); then
-      codex exec "${codex_args[@]}" > /dev/null <<__CODEX_PROMPT__
+      codex exec "${codex_args[@]}" &> /dev/null <<__CODEX_PROMPT__
 $prompt
 __CODEX_PROMPT__
     else
-      codex exec "${codex_args[@]}" "$prompt" > /dev/null
+      codex exec "${codex_args[@]}" "$prompt" &> /dev/null
     fi
   else
     if (( ${#prompt} > 100000 )); then
