@@ -22,43 +22,13 @@ You are instructed to maintain a comprehensive note-taking system to improve tas
 - **Audience**: Both Claude and human-readable
 - **Organization**: By domain (tools, web-development, databases, etc.) - max 2-3 levels deep
 
-### Folder Management
-- Always list existing folders first to check if a task folder already exists
-- If uncertain about task naming or folder reuse, ask the user
-- Create new task folder automatically if it doesn't exist
-- Consider knowledge base contributions during task work
-- **Archive completed projects**: Move finished tasks to `tasks_notes/archived/` subfolder
-- **Active projects only**: Keep only ongoing work in main `tasks_notes/` directory
-- **Archived location**: `/path/to/claude/tasks_notes/archived/`
-
 ## Note-Taking Principles
 
 ### What to Document
-1. **Project Context**
-   - Key project goals and requirements
-   - Important architectural decisions
-   - Coding patterns and conventions used
-   - Dependencies and their purposes
-   - Configuration details and environment setup
-
-2. **Task Progress**
-   - Current tasks and their status
-   - Completed milestones
-   - Pending items and next steps
-   - Blockers and their resolutions
-
-3. **User Preferences**
-   - Preferred coding styles and frameworks
-   - Specific tools and libraries to use/avoid
-   - Communication preferences
-   - Working patterns and habits
-
-4. **Important Discoveries** (Consider for Knowledge Base)
-   - Solutions to complex problems
-   - Debugging insights
-   - Performance optimizations
-   - Security considerations
-   - Integration patterns
+- **Project Context**: Goals, architectural decisions, patterns, dependencies, configuration
+- **Task Progress**: Current tasks, milestones, next steps, blockers
+- **User Preferences**: Coding styles, tool preferences, communication patterns
+- **Important Discoveries** (Consider for Knowledge Base): Complex solutions, debugging insights, optimizations, security considerations, integration patterns
 
 ### When to Take Notes
 - **When context is needed**: After user asks a question, assess if notes/knowledge base would improve your answer, then read relevant entries
@@ -69,57 +39,45 @@ You are instructed to maintain a comprehensive note-taking system to improve tas
 - **End of significant work**: Summarize progress and next steps
 - **After discovering reusable knowledge**: Propose knowledge base contributions
 
+Be proactive, comprehensive, and timely with updates. Use notes to provide better assistance over time.
+
 ### Note Management
 1. **On-Demand Review**: Read notes only when needed to answer user questions or provide context
 2. **Keep Current**: Remove outdated information promptly
 3. **Organize Clearly**: Use clear headings and structure
 4. **Update Continuously**: Add information as you learn
 5. **Prioritize Relevance**: Focus on information that improves future performance
+6. **File Size Check**: See "CRITICAL: File Size Monitoring" in File Operations section - this is mandatory after reading any note file.
 
 ## Code Navigation Tools
 
 ### ast-grep - Structural Code Search
-ast-grep is a powerful AST-based tool for navigating codebases structurally, not textually. Use it when you need precise, syntax-aware code search.
+ast-grep is a powerful AST-based tool for navigating codebases structurally, not textually. Use it for finding code structures (functions, classes, methods), pattern-based search with meta-variables, and structural queries where grep/regex would be too fragile. Works across 30+ languages.
 
-#### When to Use ast-grep
-- **Finding code structures**: Functions, classes, methods, interfaces by signature
-- **Pattern-based search**: Match code patterns with meta-variables
-- **Cross-language navigation**: Works consistently across 30+ languages
-- **Structural queries**: When grep/regex would be too fragile
-
-#### Pattern Syntax
+**Pattern Syntax:**
 - `$VAR` - matches any single AST node (variable name)
 - `$$$ARGS` - matches zero or more nodes (function arguments, statements)
 - Patterns use actual code syntax, not regex
 
-#### Examples by Use Case
-*(Examples below tested with ast-grep v0.39.5)*
-
-**Find function definitions:**
+**Common Examples** *(tested with ast-grep v0.39.5)*:
 ```bash
+# Find function definitions
 ast-grep --pattern 'function $NAME($$$ARGS) { $$$ }' --lang js
 ast-grep --pattern 'def $NAME($$$ARGS):' --lang python
-ast-grep --pattern 'func $NAME($$$PARAMS) { $$$ }' --lang go
-```
 
-**Find class declarations:**
-```bash
+# Find class declarations
 ast-grep --pattern 'class $NAME { $$$ }' --lang js
 ast-grep --pattern 'class $NAME:' --lang python
-```
 
-**Find method calls:**
-```bash
+# Find method calls
 ast-grep --pattern '$OBJ.$METHOD($$$ARGS)' --lang js
-```
 
-**Find imports/requires:**
-```bash
+# Find imports
 ast-grep --pattern 'import $NAME from $SOURCE' --lang js
 ast-grep --pattern 'from $MODULE import $NAME' --lang python
 ```
 
-#### Tool Selection Guide
+**Tool Selection Guide:**
 - **ast-grep**: Structural code patterns (functions, classes, method signatures)
 - **Grep**: Content search (strings, comments, configuration values)
 - **Glob**: File name patterns (*.js, src/**/*.py)
@@ -132,76 +90,41 @@ Use this template structure in `notes.md`:
 # Project Notes
 
 ## Project Overview
-- Brief description of the project
-- Main goals and objectives
-- Key stakeholders or users
+[Brief description, goals, stakeholders]
 
 ## Technical Stack
-- Programming languages
-- Frameworks and libraries
-- Tools and services
-- Database and storage
+[Languages, frameworks, tools, database]
 
 ## Architecture & Patterns
-- Key architectural decisions
-- Code organization patterns
-- Design patterns in use
-- Naming conventions
+[Architectural decisions, code organization, design patterns, naming conventions]
 
 ## Current Status
-- Active tasks
-- Recent completions
-- Known issues
-- Next priorities
+[Active tasks, recent completions, known issues, next priorities]
 
 ## User Preferences
-- Coding style preferences
-- Preferred tools and approaches
-- Communication style
-- Working patterns
+[Coding style, preferred tools, communication style, working patterns]
 
 ## Key Insights
-- Important solutions and approaches
-- Performance considerations
-- Security notes
-- Integration patterns
+[Solutions, performance considerations, security notes, integration patterns]
 
 ## References
-- Important documentation links
-- Code examples
-- Decision records
+[Documentation links, code examples, decision records]
 ```
 
-## Behavioral Guidelines
-
-### Active Note-Taking
-- **Proactive**: Take initiative to update notes without being asked
-- **Comprehensive**: Capture both technical and contextual information
-- **Timely**: Update notes immediately when learning something important
-- **Self-improving**: Use notes to provide better assistance over time
-
-### Information Lifecycle
+## Information Lifecycle
 1. **Capture**: Note important information as you encounter it
 2. **Organize**: Structure information logically and clearly
 3. **Review**: Reference notes when starting new tasks
 4. **Update**: Modify notes when circumstances change
 5. **Archive**: Move completed project folders to `tasks_notes/archived/` subfolder (preserves history while keeping main directory clean)
 
-### Quality Standards
-- Write notes in clear, concise language
-- Use specific examples when helpful
-- Include enough context for future understanding
-- Organize information hierarchically
-- Keep formatting consistent and readable
+## Communication Guidelines
 
 ### Multi-Question Protocol
-When asking the user multiple questions:
-- **Tag each question**: Use Q1, Q2, Q3, etc. to number questions clearly
-- **Makes responses easier**: User can reference specific questions by number
-- **Example format**:
-  - "Q1: Do you want to use TypeScript or JavaScript?"
-  - "Q2: Should I include tests?"
-  - "Q3: What port should the server run on?"
+Tag multiple questions with Q1, Q2, Q3 for easy reference:
+- "Q1: Do you want to use TypeScript or JavaScript?"
+- "Q2: Should I include tests?"
+- "Q3: What port should the server run on?"
 
 ### Plan Mode Questions
 After presenting implementation plans:
@@ -211,6 +134,21 @@ After presenting implementation plans:
 
 ## File Operations
 
+### CRITICAL: File Size Monitoring
+**ALWAYS report note file sizes immediately after reading.**
+
+After reading any note file(s):
+1. Check character count of all files read
+2. Report sizes:
+   - **If all files < 20,000 chars**: Show concise summary: "Files read: notes.md (15.2k), other.md (8.3k)"
+   - **If any file ≥ 20,000 chars**: Show full warning:
+     ```
+     ⚠️ WARNING: Large Note File Detected
+     File: [filename]
+     Size: [X] characters (exceeds 20k limit)
+     Action needed: This file should be trimmed for optimal performance.
+     ```
+
 ### Task Notes
 - Always list existing task folders in `/path/to/claude/tasks_notes/` before starting work
 - **Focus on active projects**: By default, only review folders in main `tasks_notes/` directory (exclude `archived/`)
@@ -218,6 +156,7 @@ After presenting implementation plans:
 - If uncertain about task naming or which folder to use, ask the user
 - Create new task folder and `notes.md` file if they don't exist
 - Read existing notes from the appropriate task folder to understand current context
+- **Report file sizes**: Immediately show character counts (see CRITICAL: File Size Monitoring)
 - Update notes throughout the session as you learn
 - Ensure notes are saved after significant updates
 - **Archival**: When projects are completed, move their folders to `tasks_notes/archived/` for historical reference
