@@ -203,6 +203,12 @@ When asking the user multiple questions:
   - "Q2: Should I include tests?"
   - "Q3: What port should the server run on?"
 
+### Plan Mode Questions
+After presenting implementation plans:
+- List "Unresolved Questions" if any exist
+- Use concise phrasing, sacrifice some grammar for brevity
+- Examples: "Which OAuth providers needed?" "Preferred session timeout?" "Enable MFA?"
+
 ## File Operations
 
 ### Task Notes
