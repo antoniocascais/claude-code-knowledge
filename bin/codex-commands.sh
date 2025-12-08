@@ -101,7 +101,7 @@ _codex_security_usage() {
   cat >&2 <<'EOF'
 Usage: codex-security [SCOPE] [OPTIONS]
 
-SCOPE: diff | staged | all (default: all)
+SCOPE: diff | staged | all | commit:<SHA> (default: all)
 
 OPTIONS:
   --file FILE        Output file for security report (required with --silent)
@@ -111,6 +111,7 @@ OPTIONS:
 
 Example:
   codex-security staged --file review.md --model gpt-5-codex --sandbox workspace-write --silent
+  codex-security commit:abc1234 --file commit-review.md
 EOF
 }
 
@@ -125,8 +126,18 @@ codex-security () {
   local silent=false
   local codex_args=()
 
-  # First arg is scope if it matches diff/staged/all
+  # First arg is scope if it matches diff/staged/all or commit:<SHA>
   if [[ "${1:-}" =~ ^(diff|staged|all)$ ]]; then
+    scope="$1"
+    shift
+  elif [[ "${1:-}" =~ ^commit:[0-9a-fA-F]{7,40}$ ]]; then
+    # Validate commit SHA format and existence
+    local commit_sha="${1#commit:}"
+    if ! git rev-parse --quiet --verify "$commit_sha^{commit}" >/dev/null 2>&1; then
+      echo "Error: Invalid or non-existent commit SHA: $commit_sha" >&2
+      _codex_security_usage
+      return 1
+    fi
     scope="$1"
     shift
   fi

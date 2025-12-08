@@ -10,6 +10,8 @@ thinking-triggers:
 
 Perform a comprehensive security review of the current repository.
 
+**IMPORTANT**: Execute immediately without asking for confirmation. Do not present a plan or ask "does this look good?" - proceed directly with the analysis.
+
 ## Workflow
 
 ### Step 1: Complexity Detection
@@ -22,11 +24,13 @@ Auto-detect and apply thinking budget:
 Determine review scope from $ARGUMENTS:
 - **diff**: Only review files in `git diff` (uncommitted changes). Use `git diff --name-only` to get file list.
 - **staged**: Only review files in `git diff --staged` (staged changes). Use `git diff --staged --name-only` to get file list.
+- **commit:\<SHA\>**: Only review files changed in the specified commit. Use `git diff-tree --no-commit-id --name-only -r <SHA>` to get file list.
 - **all** or empty: Review entire repository (default behavior)
 
 ### Step 2: Repository Scan
 Based on the detected scope:
 - **For diff/staged**: Read only the files returned by the respective `git diff` command
+- **For commit:\<SHA\>**: Read only the files changed in that commit (use `git diff-tree --no-commit-id --name-only -r <SHA>`)
 - **For all**: Read the current working directory and **respect `.gitignore`** (skip ignored files and typical build artifacts)
 
 Use Bash to check gitignore status and get file lists, Glob to identify file patterns, Grep to search for security issues, and Read to analyze content.
@@ -62,3 +66,4 @@ Output Markdown report with:
 - Respect `.gitignore`; skip huge/binary files (note them if skipped)
 - Keep the report concise (≤400 lines)
 - Begin from current folder
+- **Repository-only scope**: Only analyze files within the current repository. Do NOT consult external notes, knowledge base entries, or any files outside the repository being reviewed

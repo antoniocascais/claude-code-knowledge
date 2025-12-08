@@ -6,3 +6,6 @@ commands/user/context.md
 
 # Generation script (personal use only)
 bin/generate-examples.sh
+
+# Python bytecode
+__pycache__/

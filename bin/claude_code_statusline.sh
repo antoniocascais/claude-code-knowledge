@@ -7,8 +7,9 @@
 USAGE_LOG="/tmp/usage.log"
 USAGE_LOCK="/tmp/usage_refresh.lock"
 USAGE_SCRIPT="$HOME/.claude/claude_code_capture_usage.py"
-REFRESH_INTERVAL=300  # 5 minutes in seconds
-LOCK_TIMEOUT=60       # Consider lock stale after 60 seconds
+REFRESH_INTERVAL=300   # 5 minutes in seconds
+LOCK_TIMEOUT=60        # Consider lock stale after 60 seconds
+USAGE_CAPTURE_WAIT=3   # Seconds to wait for capture when refreshing usage log
 
 # Read JSON input from stdin
 input=$(cat)
@@ -93,12 +94,25 @@ trigger_refresh() {
         return  # Another process is already refreshing
     fi
 
-    # Spawn background process
-    (
-        python3 "$USAGE_SCRIPT" --silent --wait 1 >/dev/null 2>&1
+    local run_synchronously=0
+    if [[ ! -f "$USAGE_LOG" ]]; then
+        run_synchronously=1
+    fi
+
+    refresh_usage() {
+        python3 "$USAGE_SCRIPT" --silent --wait "$USAGE_CAPTURE_WAIT" >/dev/null 2>&1
+    }
+
+    if (( run_synchronously )); then
+        refresh_usage
         release_lock
-    ) &
-    disown
+    else
+        (
+            refresh_usage
+            release_lock
+        ) &
+        disown
+    fi
 }
 
 # Get git branch if in a git repository
@@ -222,8 +236,21 @@ parse_session_usage() {
         return
     fi
 
-    local session_line=$(grep -A 1 "Current session" "$USAGE_LOG" | tail -1)
-    local percentage=$(echo "$session_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
+    local session_line
+    session_line=$(grep -A 1 "Current session" "$USAGE_LOG" | tail -1)
+
+    local percentage=""
+    if [[ -n "$session_line" ]]; then
+        percentage=$(echo "$session_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
+    fi
+
+    if [[ -z "$percentage" ]]; then
+        session_line=$(grep -m 1 "Session:" "$USAGE_LOG")
+        if [[ -n "$session_line" ]]; then
+            percentage=$(echo "$session_line" | sed -n 's/.*Session:[^0-9]*\([0-9][0-9]*\)%.*/\1/p')
+        fi
+    fi
+
     echo "${percentage:-0}"
 }
 
@@ -234,8 +261,30 @@ parse_session_reset() {
         return
     fi
 
-    local reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep "Resets" | head -1)
-    local reset_info=$(echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//')
+    local reset_line
+    reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep "Resets" | head -1)
+    local reset_info=""
+
+    if [[ -n "$reset_line" ]]; then
+        reset_info=$(echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//')
+    fi
+
+    if [[ -z "$reset_info" ]]; then
+        local session_line
+        session_line=$(grep -m 1 "Session:" "$USAGE_LOG")
+
+        if [[ -n "$session_line" ]]; then
+            local after_arrow
+            after_arrow=$(echo "$session_line" | awk -F "↻" 'NF>1 {print $2}')
+            if [[ -n "$after_arrow" ]]; then
+                after_arrow=${after_arrow%%│*}
+                after_arrow=${after_arrow%%┘*}
+                after_arrow=$(echo "$after_arrow" | sed 's/^[[:space:]]*//;s/[[:space:]─]*$//')
+                reset_info="$after_arrow"
+            fi
+        fi
+    fi
+
     echo "$reset_info"
 }
 
@@ -246,8 +295,21 @@ parse_week_usage() {
         return
     fi
 
-    local week_line=$(grep -A 1 "Current week (all models)" "$USAGE_LOG" | tail -1)
-    local percentage=$(echo "$week_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
+    local week_line
+    week_line=$(grep -A 1 "Current week (all models)" "$USAGE_LOG" | tail -1)
+
+    local percentage=""
+    if [[ -n "$week_line" ]]; then
+        percentage=$(echo "$week_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
+    fi
+
+    if [[ -z "$percentage" ]]; then
+        week_line=$(grep -m 1 "Week:" "$USAGE_LOG")
+        if [[ -n "$week_line" ]]; then
+            percentage=$(echo "$week_line" | sed -n 's/.*Week:[^0-9]*\([0-9][0-9]*\)%.*/\1/p')
+        fi
+    fi
+
     echo "${percentage:-0}"
 }
 
@@ -258,8 +320,30 @@ parse_week_reset() {
         return
     fi
 
-    local reset_line=$(grep -A 2 "Current week (all models)" "$USAGE_LOG" | grep "Resets" | head -1)
-    local reset_info=$(echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//')
+    local reset_line
+    reset_line=$(grep -A 2 "Current week (all models)" "$USAGE_LOG" | grep "Resets" | head -1)
+    local reset_info=""
+
+    if [[ -n "$reset_line" ]]; then
+        reset_info=$(echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//')
+    fi
+
+    if [[ -z "$reset_info" ]]; then
+        local week_line
+        week_line=$(grep -m 1 "Week:" "$USAGE_LOG")
+
+        if [[ -n "$week_line" ]]; then
+            local after_arrow
+            after_arrow=$(echo "$week_line" | awk -F "↻" 'NF>1 {print $2}')
+            if [[ -n "$after_arrow" ]]; then
+                after_arrow=${after_arrow%%│*}
+                after_arrow=${after_arrow%%┘*}
+                after_arrow=$(echo "$after_arrow" | sed 's/^[[:space:]]*//;s/[[:space:]─]*$//')
+                reset_info="$after_arrow"
+            fi
+        fi
+    fi
+
     echo "$reset_info"
 }
 

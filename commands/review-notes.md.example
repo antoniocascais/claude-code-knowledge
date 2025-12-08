@@ -183,16 +183,54 @@ Identify folders/content for action:
 - **Refresh "Next Priorities"**: Remove completed items, add new ones
 - **Optimize for Claude**: Remove verbose details, keep essential context
 
+#### D. Archiving Within Active Folders
+
+**When reviewing active task folders**, outdated information that's no longer relevant but might be valuable for future reference should be archived within the task folder structure:
+
+**Archive Location**: `tasks_notes/_archived/[SAME_FOLDER_NAME]/`
+
+**Important Distinction**:
+- **`tasks_notes/archived/`** - Entire completed/inactive project folders (projects no longer being worked on)
+- **`tasks_notes/_archived/[folder]/`** - Archived content from active projects (outdated info removed from active notes)
+
+**What to Archive** (move to `_archived/`):
+- Superseded approaches or solutions that were tried but replaced
+- Historical context that's no longer relevant but documents decision-making
+- Outdated project requirements or specifications
+- Previous implementation notes that have been refactored
+- Meeting notes or discussions that are no longer current
+- Experimental ideas that were explored but not pursued
+
+**What to Delete** (don't archive):
+- Duplicate information already captured elsewhere
+- Trivial or temporary notes with no historical value
+- Outdated links or references with no context
+- Test data or debugging notes that served their purpose
+
+**Archiving Workflow**:
+1. Identify outdated content in active `tasks_notes/[folder]/notes.md`
+2. Create `tasks_notes/_archived/[folder]/` directory if it doesn't exist
+3. Move content to descriptively named file: `tasks_notes/_archived/[folder]/[date]-[description].md`
+   - Example: `tasks_notes/_archived/kubernetes-setup/2025-01-15-old-networking-approach.md`
+4. Add brief reference in active notes if needed: "Previous approach archived to `_archived/kubernetes-setup/2025-01-15-old-networking-approach.md`"
+5. Keep active `notes.md` clean and focused on current work
+
+**Benefits**:
+- Maintains clean, focused active notes for optimal Claude performance
+- Preserves historical context for future reference
+- Documents evolution of project decisions
+- Reduces cognitive load during active sessions
+
 ### Step 5: Immediate Action & Agent Deployment
 
 #### A. Immediate Simple Fixes (Auto-Applied)
 
 **Apply these fixes instantly without asking:**
 
-1. **Archive Empty/Trivial Folders**:
-   - Remove folders with only template content
-   - Archive folders for clearly completed projects with no reusable context
-   - Delete test/experimental folders that served their purpose
+1. **Archive Completed Projects and Clean Active Folders**:
+   - **Move entire completed projects**: Move folders for clearly completed/inactive projects to `tasks_notes/archived/[folder_name]/` (preserves entire project history)
+   - **Archive outdated content from active folders**: Move superseded/outdated information from active notes to `tasks_notes/_archived/[folder_name]/` (see Step 4D for details)
+   - **Delete trivial content**: Remove folders with only template content or test/experimental folders that served their purpose
 
 2. **Update Task Status**:
    - Mark obviously completed tasks as "completed" in Current Status
