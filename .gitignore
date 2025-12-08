@@ -9,3 +9,5 @@ bin/generate-examples.sh
 
 # Python bytecode
 __pycache__/
+
+do-not-track/
