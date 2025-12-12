@@ -18,14 +18,14 @@ input=$(cat)
 dir=$(echo "$input" | jq -r '.cwd')
 #dir=$(echo "$input" )
 model=$(echo "$input" | jq -r '.model.display_name')
-cost=$(echo "$input" | jq -r '.cost.total_cost_usd')
 duration_ms=$(echo "$input" | jq -r '.cost.total_duration_ms')
-api_duration_ms=$(echo "$input" | jq -r '.cost.total_api_duration_ms')
 lines_added=$(echo "$input" | jq -r '.cost.total_lines_added')
 lines_removed=$(echo "$input" | jq -r '.cost.total_lines_removed')
 exceeds_tokens=$(echo "$input" | jq -r '.exceeds_200k_tokens')
 workspace_current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
 workspace_project_dir=$(echo "$input" | jq -r '.workspace.project_dir')
+ctx_input_tokens=$(echo "$input" | jq -r '.context_window.total_input_tokens')
+ctx_output_tokens=$(echo "$input" | jq -r '.context_window.total_output_tokens')
 
 # Check if usage refresh is needed
 needs_refresh() {
@@ -130,20 +130,6 @@ get_git_branch() {
     fi
 }
 
-# Format cost display
-format_cost() {
-    local cost_val=$1
-    # Use awk for reliable floating-point arithmetic and rounding
-    local formatted=$(awk "BEGIN { 
-        cost = $cost_val;
-        if (cost == 0) 
-            printf \"\$0\";
-        else 
-            printf \"\$%.2f\", cost;
-    }")
-    echo "$formatted"
-}
-
 # Format duration display
 format_duration() {
     local ms=$1
@@ -161,17 +147,6 @@ format_duration() {
     fi
 }
 
-# Format combined duration display (session + api)
-format_combined_duration() {
-    local session_ms=$1
-    local api_ms=$2
-
-    local session=$(format_duration "$session_ms")
-    local api=$(format_duration "$api_ms")
-
-    echo "(session: $session | api: $api)"
-}
-
 # Format lines added/removed display
 format_lines() {
     local added=$1
@@ -187,22 +162,6 @@ format_lines() {
     fi
 }
 
-# Get color based on cost
-get_cost_color() {
-    local cost_val=$1
-    # Use awk for reliable floating-point comparisons, return numeric code
-    local color_num=$(awk "BEGIN { 
-        cost = $cost_val;
-        if (cost <= 3) 
-            print \"119\";
-        else if (cost <= 7) 
-            print \"220\";
-        else 
-            print \"196\";
-    }")
-    echo "\e[38;5;${color_num}m"
-}
-
 # Format token warning display
 format_token_warning() {
     local exceeds=$1
@@ -212,6 +171,28 @@ format_token_warning() {
     else
         echo ""
     fi
+}
+
+# Format token display (session I/O stats)
+format_context_window() {
+    local input_tokens=$1
+    local output_tokens=$2
+
+    # Handle null/missing values
+    if [[ "$input_tokens" == "null" || -z "$input_tokens" ]]; then input_tokens=0; fi
+    if [[ "$output_tokens" == "null" || -z "$output_tokens" ]]; then output_tokens=0; fi
+
+    # Format token counts (k suffix for thousands)
+    local in_fmt=$(awk "BEGIN {
+        if ($input_tokens >= 1000) printf \"%.1fk\", $input_tokens/1000;
+        else printf \"%d\", $input_tokens
+    }")
+    local out_fmt=$(awk "BEGIN {
+        if ($output_tokens >= 1000) printf \"%.1fk\", $output_tokens/1000;
+        else printf \"%d\", $output_tokens
+    }")
+
+    echo "\e[38;5;246mtokens: in:${in_fmt} out:${out_fmt}\e[0m"
 }
 
 # Detect dependency errors recorded in the usage log
@@ -494,27 +475,26 @@ format_directory() {
 trigger_refresh
 
 git_branch=$(get_git_branch)
-formatted_cost=$(format_cost "$cost")
-formatted_duration=$(format_combined_duration "$duration_ms" "$api_duration_ms")
+formatted_session_duration=$(format_duration "$duration_ms")
 formatted_lines=$(format_lines "$lines_added" "$lines_removed")
 token_warning=$(format_token_warning "$exceeds_tokens")
-cost_color=$(get_cost_color "$cost")
+formatted_context=$(format_context_window "$ctx_input_tokens" "$ctx_output_tokens")
 formatted_dir=$(format_directory "$workspace_current_dir" "$workspace_project_dir")
 formatted_usage=$(format_usage_display)
 
 # Format and display the status line with colors
 if [[ -n "$git_branch" ]]; then
-    # With git branch: dir │ branch │ model │ cost duration lines token_warning usage
+    # With git branch: dir │ branch │ model │ duration │ context │ lines token_warning usage
     if [[ -n "$formatted_lines" ]]; then
-        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;208m$git_branch\e[0m \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m $cost_color$formatted_cost $formatted_duration\e[0m \e[38;5;240m│\e[0m $formatted_lines$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
+        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;208m$git_branch\e[0m \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m \e[38;5;246m$formatted_session_duration\e[0m \e[38;5;240m│\e[0m $formatted_context \e[38;5;240m│\e[0m $formatted_lines$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
     else
-        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;208m$git_branch\e[0m \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m $cost_color$formatted_cost $formatted_duration\e[0m$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
+        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;208m$git_branch\e[0m \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m \e[38;5;246m$formatted_session_duration\e[0m \e[38;5;240m│\e[0m $formatted_context$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
     fi
 else
-    # Without git branch: dir │ model │ cost duration lines token_warning usage
+    # Without git branch: dir │ model │ duration │ context │ lines token_warning usage
     if [[ -n "$formatted_lines" ]]; then
-        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m $cost_color$formatted_cost $formatted_duration\e[0m \e[38;5;240m│\e[0m $formatted_lines$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
+        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m \e[38;5;246m$formatted_session_duration\e[0m \e[38;5;240m│\e[0m $formatted_context \e[38;5;240m│\e[0m $formatted_lines$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
     else
-        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m $cost_color$formatted_cost $formatted_duration\e[0m$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
+        echo -e "\e[38;5;240m┌─\e[0m $formatted_dir \e[38;5;240m│\e[0m \e[38;5;222m$model\e[0m \e[38;5;240m│\e[0m \e[38;5;246m$formatted_session_duration\e[0m \e[38;5;240m│\e[0m $formatted_context$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
     fi
 fi
