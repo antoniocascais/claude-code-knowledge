@@ -37,10 +37,11 @@ The setup script will generate your personal configuration files from the `.exam
 - Replaces `/path/to/claude` with your provided path
 - Replaces `$HOME/.claude` with your actual home directory
 - Creates/updates the following files inside your Claude directory:
-  - `<CLAUDE_PATH>/CLAUDE.md` - Main note-taking system configuration
+  - `<CLAUDE_PATH>/CLAUDE.md` - Main configuration
   - `<CLAUDE_PATH>/commands/review-notes.md` - Task notes maintenance command
   - `<CLAUDE_PATH>/commands/review-knowledge.md` - Knowledge base review command
   - `<CLAUDE_PATH>/commands/user/context.md` - Context loading command
+  - `<CLAUDE_PATH>/skills/note-taking/SKILL.md` - Note-taking and knowledge management skill
 - Copies every file from the repository's `agents/` directory into `<CLAUDE_PATH>/agents/`
 - Ensures the required subfolders exist before writing each file
 - Prompts for confirmation before overwriting any existing destination file
@@ -65,6 +66,7 @@ If you opted into symlink creation during setup, this step is already complete. 
 ln -s /path/to/your/claude/folder/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s /path/to/your/claude/folder/agents ~/.claude/agents
 ln -s /path/to/your/claude/folder/commands ~/.claude/commands
+ln -s /path/to/your/claude/folder/skills ~/.claude/skills
 ```
 
 **Example:**
@@ -73,6 +75,7 @@ ln -s /path/to/your/claude/folder/commands ~/.claude/commands
 ln -s /home/user/Documents/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s /home/user/Documents/claude/agents ~/.claude/agents
 ln -s /home/user/Documents/claude/commands ~/.claude/commands
+ln -s /home/user/Documents/claude/skills ~/.claude/skills
 ```
 
 **Benefits of symlinks:**

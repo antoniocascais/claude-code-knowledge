@@ -145,6 +145,7 @@ setup_symlinks() {
     create_link "$CLAUDE_PATH/CLAUDE.md" "$target_dir/CLAUDE.md"
     create_link "$CLAUDE_PATH/commands" "$target_dir/commands"
     create_link "$CLAUDE_PATH/agents" "$target_dir/agents"
+    create_link "$CLAUDE_PATH/skills" "$target_dir/skills"
 
     echo ""
     echo "Symlink setup complete!"
@@ -185,6 +186,7 @@ FILES=(
     "commands/review-notes.md"
     "commands/review-knowledge.md"
     "commands/user/context.md"
+    "skills/note-taking/SKILL.md"
 )
 
 for file in "${FILES[@]}"; do
