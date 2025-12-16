@@ -3,11 +3,10 @@ CLAUDE.md
 commands/review-notes.md
 commands/review-knowledge.md
 commands/user/context.md
+skills/note-taking/SKILL.md
 
 # Generation script (personal use only)
 bin/generate-examples.sh
 
 # Python bytecode
 __pycache__/
-
-do-not-track/

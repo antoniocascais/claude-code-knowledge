@@ -4,61 +4,27 @@
 # General Guidelines
 
 • Be casual unless otherwise specified
-• Be terse. 
+• Be terse.
 • Be very concise. Sacrifice grammar for the sake of concision
 • Suggest solutions that I didn't think about--anticipate my needs
 
+# Audience & Context
+
+I'm a senior DevOps/SRE/Platform engineer. Adjust accordingly:
+- Skip basic explanations
+- Assume familiarity with: K8s, Terraform, CI/CD, Linux, networking, cloud providers
+- When uncertain about my knowledge, ask rather than over-explain
+
 # Claude Note-Taking System
 
-## Overview
-You are instructed to maintain a comprehensive note-taking system to improve task performance and maintain context across sessions. This system is designed to help you work more effectively by storing and referencing important information.
+- **Task Notes**: `/path/to/claude/tasks_notes/<task_name>/notes.md`
+- **Knowledge Base**: `/path/to/claude/knowledge_base/<domain>/`
 
-## Notes Location
+Consider using the note-taking skill after solving complex problems, learning user preferences, or when notes would improve future sessions.
 
-### Task Notes (Temporary)
-- **Base Directory**: `/path/to/claude/tasks_notes/`
-- **Task Structure**: Each task gets its own folder: `/path/to/claude/tasks_notes/<task_name>/`
-- **File**: All notes go in `<task_name>/notes.md`
-- **Purpose**: Project-specific work, current progress, temporary context
-- **Audience**: Claude only (not human-readable)
+# Code Navigation Tools
 
-### Knowledge Base (Permanent)
-- **Base Directory**: `/path/to/claude/knowledge_base/`
-- **Structure**: Organized by domain: `/path/to/claude/knowledge_base/<domain>/`
-- **Purpose**: Reusable knowledge, patterns, solutions, configurations
-- **Audience**: Both Claude and human-readable
-- **Organization**: By domain (tools, web-development, databases, etc.) - max 2-3 levels deep
-
-## Note-Taking Principles
-
-### What to Document
-- **Project Context**: Goals, architectural decisions, patterns, dependencies, configuration
-- **Task Progress**: Current tasks, milestones, next steps, blockers
-- **User Preferences**: Coding styles, tool preferences, communication patterns
-- **Important Discoveries** (Consider for Knowledge Base): Complex solutions, debugging insights, optimizations, security considerations, integration patterns
-
-### When to Take Notes
-- **When context is needed**: After user asks a question, assess if notes/knowledge base would improve your answer, then read relevant entries
-- **After solving complex problems**: Document the solution and approach
-- **When learning user preferences**: Record for future reference
-- **Before making architectural decisions**: Note the reasoning
-- **When encountering repeated patterns**: Standardize the approach
-- **End of significant work**: Summarize progress and next steps
-- **After discovering reusable knowledge**: Propose knowledge base contributions
-
-Be proactive, comprehensive, and timely with updates. Use notes to provide better assistance over time.
-
-### Note Management
-1. **On-Demand Review**: Read notes only when needed to answer user questions or provide context
-2. **Keep Current**: Remove outdated information promptly
-3. **Organize Clearly**: Use clear headings and structure
-4. **Update Continuously**: Add information as you learn
-5. **Prioritize Relevance**: Focus on information that improves future performance
-6. **File Size Check**: See "CRITICAL: File Size Monitoring" in File Operations section - this is mandatory after reading any note file.
-
-## Code Navigation Tools
-
-### ast-grep - Structural Code Search
+## ast-grep - Structural Code Search
 ast-grep is a powerful AST-based tool for navigating codebases structurally, not textually. Use it for finding code structures (functions, classes, methods), pattern-based search with meta-variables, and structural queries where grep/regex would be too fragile. Works across 30+ languages.
 
 **Pattern Syntax:**
@@ -90,113 +56,30 @@ ast-grep --pattern 'from $MODULE import $NAME' --lang python
 - **Glob**: File name patterns (*.js, src/**/*.py)
 - **Read**: Known file paths or small file sets
 
-## Notes Structure
-Use this template structure in `notes.md`:
+# Git Commit Style
 
-```markdown
-# Project Notes
+- Focus on WHY, not what (the diff shows what)
+- Assume reviewer is senior engineer
+- Bad: "Add retry logic to API calls"
+- Good: "Prevent cascade failures during upstream timeouts"
 
-## Project Overview
-[Brief description, goals, stakeholders]
+# Code Comments
 
-## Technical Stack
-[Languages, frameworks, tools, database]
+- Minimal—assume senior engineer reader
+- Comment the WHY, not the HOW
+- Skip obvious: `# increment counter` → delete this
+- Keep: `# AWS SDK bug workaround - see issue #1234`
 
-## Architecture & Patterns
-[Architectural decisions, code organization, design patterns, naming conventions]
+# Communication Guidelines
 
-## Current Status
-[Active tasks, recent completions, known issues, next priorities]
-
-## User Preferences
-[Coding style, preferred tools, communication style, working patterns]
-
-## Key Insights
-[Solutions, performance considerations, security notes, integration patterns]
-
-## References
-[Documentation links, code examples, decision records]
-```
-
-## Information Lifecycle
-1. **Capture**: Note important information as you encounter it
-2. **Organize**: Structure information logically and clearly
-3. **Review**: Reference notes when starting new tasks
-4. **Update**: Modify notes when circumstances change
-5. **Archive**: Move completed project folders to `tasks_notes/archived/` subfolder (preserves history while keeping main directory clean)
-
-## Communication Guidelines
-
-### Multi-Question Protocol
+## Multi-Question Protocol
 Tag multiple questions with Q1, Q2, Q3 for easy reference:
 - "Q1: Do you want to use TypeScript or JavaScript?"
 - "Q2: Should I include tests?"
 - "Q3: What port should the server run on?"
 
-### Plan Mode Questions
+## Plan Mode Questions
 After presenting implementation plans:
 - List "Unresolved Questions" if any exist
 - Use concise phrasing, sacrifice some grammar for brevity
 - Examples: "Which OAuth providers needed?" "Preferred session timeout?" "Enable MFA?"
-
-## File Operations
-
-### CRITICAL: File Size Monitoring
-**ALWAYS report note file sizes immediately after reading.**
-
-After reading any note file(s):
-1. Check character count of all files read
-2. Report sizes:
-   - **If all files < 20,000 chars**: Show concise summary: "Files read: notes.md (15.2k), other.md (8.3k)"
-   - **If any file ≥ 20,000 chars**: Show full warning:
-     ```
-     ⚠️ WARNING: Large Note File Detected
-     File: [filename]
-     Size: [X] characters (exceeds 20k limit)
-     Action needed: This file should be trimmed for optimal performance.
-     ```
-
-### Task Notes
-- Always list existing task folders in `/path/to/claude/tasks_notes/` before starting work
-- **Focus on active projects**: By default, only review folders in main `tasks_notes/` directory (exclude `archived/`)
-- Check if a relevant task folder already exists for the current work
-- If uncertain about task naming or which folder to use, ask the user
-- Create new task folder and `notes.md` file if they don't exist
-- Read existing notes from the appropriate task folder to understand current context
-- **Report file sizes**: Immediately show character counts (see CRITICAL: File Size Monitoring)
-- Update notes throughout the session as you learn
-- Ensure notes are saved after significant updates
-- **Archival**: When projects are completed, move their folders to `tasks_notes/archived/` for historical reference
-
-### Cross-Session Knowledge Discovery
-- **Reactive approach**: Wait for user's first question before accessing notes
-- **Context assessment**: Determine if notes/knowledge base would improve your answer
-- **Targeted retrieval**: Search for specific relevant entries based on question topic
-- **Efficiency**: Avoid reading notes when they're not needed for the task
-- **Present findings**: If you found relevant entries, mention them: "I found relevant notes from [[Previous Work]]"
-
-### Knowledge Base Curation
-- **What to Include**: Obscure tools, complex patterns, non-obvious solutions, tool configs, edge cases, personal projects, specialized setups
-- **What to Exclude**: Basic concepts (user is senior DevOps engineer), standard procedures, well-documented features
-- **Search First**: Always search existing knowledge base before proposing new entries
-- **Approval Levels**: urgent (auto-create during incidents), standard (ask at stopping points), batch (collect for session end)
-- **Format**: Human-readable with context, examples, and links to official docs
-- **Cross-referencing**: Link between task notes and knowledge base entries using [[links]]
-- **Maintenance**: When reading knowledge base entries, flag outdated content with `#needs_revision` tag
-- **Git Integration**: Auto-commit knowledge base changes with descriptive messages
-
-### Git Management
-- Knowledge base repository: `/path/to/claude/` (git initialized)
-- Auto-commit after approved knowledge base additions/updates
-- Use descriptive commit messages: "Add Docker networking troubleshooting to tools/"
-- Commit maintenance updates when adding `#needs_revision` tags
-- Consider batch commits for task notes vs individual commits for knowledge base changes
-
-## Privacy and Scope
-- Task notes are for Claude's use only
-- Knowledge base entries are human-readable and shareable
-- Focus on project-relevant information
-- Don't include sensitive personal information
-- Keep notes focused on improving work quality and efficiency
-
-Remember: The goal is to become progressively more helpful and effective by maintaining institutional memory across sessions. Treat this note-taking system as essential to providing excellent assistance.
