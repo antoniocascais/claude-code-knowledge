@@ -15,6 +15,7 @@ My Claude Code configs — grab what you need.
 | `codemap` | Generate codebase maps with architecture diagrams (WIP - still testing) |
 | `workflow-review` | Reviews CC sessions and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
 | `codex` | AI peer review via OpenAI Codex CLI — Claude consults Codex for code review, architecture decisions, and trade-off validation |
+| `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `c7` | Fetches up-to-date library docs from Context7, saves to /tmp/context7/ |
 
 ### Commands
