@@ -15,9 +15,27 @@
       "Bash(git branch:*)",
       "Bash(git show:*)",
       "Bash(gitleaks:*)",
-      "Bash(trivy:*)"
+      "Bash(trivy:*)",
+      "Bash(ctask:*)",
+      "Bash(make:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(docker build:*)",
+      "Bash(docker run:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker start:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker pull:*)",
+      "Bash(docker push:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx vitest:*)"
+    ]
   },
   "hooks": {
     "UserPromptSubmit": [
@@ -38,6 +56,10 @@
           {
             "type": "command",
             "command": "~/.claude/skills/workflow-review/scripts/session-start.sh"
+          },
+          {
+            "type": "command",
+            "command": "echo 'export BASH_ENV=~/Documents/ai/bin/gh-function.sh' >> \"$CLAUDE_ENV_FILE\""
           }
         ]
       }
@@ -91,6 +113,14 @@
           {
             "type": "command",
             "command": "~/Documents/ai/bin/claude-block-sensitive-bash.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-validate-git.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-validate-build.sh"
           }
         ]
       },
@@ -114,6 +144,9 @@
     "frontend-design@claude-code-plugins": true,
     "gopls-lsp@claude-plugins-official": true
   },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "promptSuggestionEnabled": false,
   "additionalDirectories": [
     "~/Documents/claude/"
@@ -121,5 +154,6 @@
   "feedbackSurveyState": {
     "lastShownTime": 1753975711695
   },
-  "model": "opus"
+  "model": "opus",
+  "outputStyle": "Kitty Safe"
 }
