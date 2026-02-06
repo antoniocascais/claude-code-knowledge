@@ -99,7 +99,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Before editing: Is this ONLY addressing the stated goal? Are you modifying anything outside scope (reformatting, refactoring, comment changes)? If yes, stop and ask user first."
+            "prompt": "Scope check: Is this edit directly addressing what was requested? Allow: bug fixes, requested changes, related config updates. Block: reformatting or refactoring outside stated scope. When uncertain, allow and trust user to correct."
           }
         ]
       }
