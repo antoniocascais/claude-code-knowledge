@@ -15,6 +15,7 @@ My Claude Code configs — grab what you need.
 | `codemap` | Generate codebase maps with architecture diagrams (WIP - still testing) |
 | `workflow-review` | Reviews CC sessions and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
 | `codex` | AI peer review via OpenAI Codex CLI — Claude consults Codex for code review, architecture decisions, and trade-off validation |
+| `ctask` | Local task tracker — manages tasks, dependencies, comments, labels via SQLite |
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `c7` | Fetches up-to-date library docs from Context7, saves to /tmp/context7/ |
 
@@ -121,6 +122,19 @@ After discussion, updated findings:
 
 Codex found a real bug: jq -r ".$field // empty" treats false as falsy and returns empty string.
 ```
+
+### ctask (Local Task Tracker)
+
+Requires a `ctask` bash wrapper script on your `$PATH`. The wrapper is a thin CLI over a local SQLite database — it handles task CRUD, comments, dependencies, and labels.
+
+**Setup:**
+```bash
+ln -s "$(pwd)/skills/ctask/bin/ctask" ~/bin/ctask   # or anywhere on $PATH
+```
+
+Override the database location with `CTASK_DB` env var (default: `~/Documents/claude/tasks.db`). Database auto-initializes on first use.
+
+**Requirements:** `sqlite3`
 
 ### workflow-review
 

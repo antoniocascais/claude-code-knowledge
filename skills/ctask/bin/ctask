@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DB="${CTASK_DB:-$HOME/Documents/claude/tasks.db}"
+SQLITE="sqlite3 -header -column"
+
+# Auto-initialize database on first use
+if [[ ! -f "$DB" ]]; then
+    mkdir -p "$(dirname "$DB")"
+    sqlite3 "$DB" <<'SQL'
+CREATE TABLE tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    status TEXT DEFAULT 'open' CHECK(status IN ('open','in_progress','blocked','done','cancelled')),
+    priority TEXT DEFAULT 'medium' CHECK(priority IN ('low','medium','high','critical')),
+    project TEXT DEFAULT '',
+    created_at DATETIME DEFAULT (datetime('now')),
+    updated_at DATETIME DEFAULT (datetime('now'))
+);
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at DATETIME DEFAULT (datetime('now'))
+);
+CREATE TABLE dependencies (
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    blocked_by INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    PRIMARY KEY (task_id, blocked_by)
+);
+CREATE TABLE labels (
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    label TEXT NOT NULL,
+    PRIMARY KEY (task_id, label)
+);
+SQL
+    echo "Initialized ctask database at $DB"
+fi
+
+sql() { $SQLITE "$DB" "PRAGMA foreign_keys=ON; $1"; }
+
+valid_status() { [[ "$1" =~ ^(open|in_progress|blocked|done|cancelled)$ ]] || { echo "error: invalid status '$1'" >&2; return 1; }; }
+valid_priority() { [[ "$1" =~ ^(low|medium|high|critical)$ ]] || { echo "error: invalid priority '$1'" >&2; return 1; }; }
+valid_id() { [[ "$1" =~ ^[0-9]+$ ]] || { echo "error: invalid id '$1'" >&2; return 1; }; }
+
+usage() {
+    cat <<'EOF'
+ctask — Claude's local task tracker
+
+Usage:
+  ctask create <title> [--desc <text>] [--priority low|medium|high|critical] [--project <name>]
+  ctask list [--status <s>] [--priority <p>] [--project <name>] [--all]
+  ctask show <id>
+  ctask update <id> [--title <t>] [--desc <d>] [--status <s>] [--priority <p>] [--project <name>]
+  ctask comment <id> <body>
+  ctask comments <id>
+  ctask block <id> --by <blocker_id>
+  ctask unblock <id> --by <blocker_id>
+  ctask deps <id>
+  ctask label <id> <label>
+  ctask unlabel <id> <label>
+  ctask labels <id>
+  ctask delete <id>
+  ctask search <query>
+
+Environment:
+  CTASK_DB    Path to SQLite database (default: ~/Documents/claude/tasks.db)
+EOF
+}
+
+cmd_create() {
+    local title="" desc="" priority="medium" project=""
+    title="$1"; shift || { echo "error: title required" >&2; return 1; }
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --desc)     desc="$2"; shift 2 ;;
+            --priority) valid_priority "$2"; priority="$2"; shift 2 ;;
+            --project)  project="$2"; shift 2 ;;
+            *) echo "error: unknown flag $1" >&2; return 1 ;;
+        esac
+    done
+    local id
+    id=$($SQLITE "$DB" "PRAGMA foreign_keys=ON; INSERT INTO tasks (title, description, priority, project) VALUES ('$(sed "s/'/''/g" <<< "$title")', '$(sed "s/'/''/g" <<< "$desc")', '$priority', '$(sed "s/'/''/g" <<< "$project")'); SELECT last_insert_rowid();" | tail -1 | tr -d ' ')
+    echo "Created task #$id: $title"
+}
+
+cmd_list() {
+    local where="status != 'cancelled'" all=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --status)  valid_status "$2"; where="$where AND status = '$2'"; shift 2 ;;
+            --priority) valid_priority "$2"; where="$where AND priority = '$2'"; shift 2 ;;
+            --project) where="$where AND project = '$2'"; shift 2 ;;
+            --all)     all=true; shift ;;
+            *) echo "error: unknown flag $1" >&2; return 1 ;;
+        esac
+    done
+    if $all; then where="1=1"; fi
+    sql "SELECT id, title, status, priority, project, created_at FROM tasks WHERE $where ORDER BY
+        CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END,
+        created_at DESC;"
+}
+
+cmd_show() {
+    local id="$1"; valid_id "$id"
+    sql "SELECT * FROM tasks WHERE id = $id;"
+    echo ""
+    echo "--- Labels ---"
+    sql "SELECT label FROM labels WHERE task_id = $id;"
+    echo ""
+    echo "--- Dependencies (blocked by) ---"
+    sql "SELECT d.blocked_by AS blocker_id, t.title, t.status FROM dependencies d JOIN tasks t ON t.id = d.blocked_by WHERE d.task_id = $id;"
+    echo ""
+    echo "--- Blocks ---"
+    sql "SELECT d.task_id AS blocked_id, t.title, t.status FROM dependencies d JOIN tasks t ON t.id = d.task_id WHERE d.blocked_by = $id;"
+    echo ""
+    echo "--- Comments ---"
+    sql "SELECT id, body, created_at FROM comments WHERE task_id = $id ORDER BY created_at;"
+}
+
+cmd_update() {
+    local id="$1"; valid_id "$id"; shift
+    local sets="" ts="updated_at = datetime('now')"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --title)    sets="$sets title = '$(sed "s/'/''/g" <<< "$2")',"; shift 2 ;;
+            --desc)     sets="$sets description = '$(sed "s/'/''/g" <<< "$2")',"; shift 2 ;;
+            --status)   valid_status "$2"; sets="$sets status = '$2',"; shift 2 ;;
+            --priority) valid_priority "$2"; sets="$sets priority = '$2',"; shift 2 ;;
+            --project)  sets="$sets project = '$(sed "s/'/''/g" <<< "$2")',"; shift 2 ;;
+            *) echo "error: unknown flag $1" >&2; return 1 ;;
+        esac
+    done
+    [[ -z "$sets" ]] && { echo "error: nothing to update" >&2; return 1; }
+    sql "UPDATE tasks SET $sets $ts WHERE id = $id;"
+    echo "Updated task #$id"
+}
+
+cmd_comment() {
+    local id="$1"; valid_id "$id"; shift
+    local body="$*"
+    sql "INSERT INTO comments (task_id, body) VALUES ($id, '$(sed "s/'/''/g" <<< "$body")');"
+    echo "Comment added to task #$id"
+}
+
+cmd_comments() {
+    valid_id "$1"
+    sql "SELECT id, body, created_at FROM comments WHERE task_id = $1 ORDER BY created_at;"
+}
+
+cmd_block() {
+    local id="$1"; valid_id "$id"; by=""
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --by) by="$2"; shift 2 ;;
+            *) echo "error: unknown flag $1" >&2; return 1 ;;
+        esac
+    done
+    [[ -z "$by" ]] && { echo "error: --by required" >&2; return 1; }
+    valid_id "$by"
+    sql "INSERT OR IGNORE INTO dependencies (task_id, blocked_by) VALUES ($id, $by);"
+    echo "Task #$id now blocked by #$by"
+}
+
+cmd_unblock() {
+    local id="$1"; valid_id "$id"; by=""
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --by) by="$2"; shift 2 ;;
+            *) echo "error: unknown flag $1" >&2; return 1 ;;
+        esac
+    done
+    [[ -z "$by" ]] && { echo "error: --by required" >&2; return 1; }
+    valid_id "$by"
+    sql "DELETE FROM dependencies WHERE task_id = $id AND blocked_by = $by;"
+    echo "Removed dependency: task #$id no longer blocked by #$by"
+}
+
+cmd_deps() {
+    valid_id "$1"
+    echo "--- Blocked by ---"
+    sql "SELECT d.blocked_by AS id, t.title, t.status FROM dependencies d JOIN tasks t ON t.id = d.blocked_by WHERE d.task_id = $1;"
+    echo ""
+    echo "--- Blocks ---"
+    sql "SELECT d.task_id AS id, t.title, t.status FROM dependencies d JOIN tasks t ON t.id = d.task_id WHERE d.blocked_by = $1;"
+}
+
+cmd_label() {
+    valid_id "$1"
+    sql "INSERT OR IGNORE INTO labels (task_id, label) VALUES ($1, '$2');"
+    echo "Label '$2' added to task #$1"
+}
+
+cmd_unlabel() {
+    valid_id "$1"
+    sql "DELETE FROM labels WHERE task_id = $1 AND label = '$2';"
+    echo "Label '$2' removed from task #$1"
+}
+
+cmd_labels() {
+    valid_id "$1"
+    sql "SELECT label FROM labels WHERE task_id = $1;"
+}
+
+cmd_delete() {
+    valid_id "$1"
+    sql "DELETE FROM tasks WHERE id = $1;"
+    echo "Deleted task #$1"
+}
+
+cmd_search() {
+    local q="%$*%"
+    sql "SELECT id, title, status, priority FROM tasks WHERE title LIKE '$(sed "s/'/''/g" <<< "$q")' OR description LIKE '$(sed "s/'/''/g" <<< "$q")' ORDER BY created_at DESC;"
+}
+
+[[ $# -eq 0 ]] && { usage; exit 0; }
+
+case "$1" in
+    create)   shift; cmd_create "$@" ;;
+    list)     shift; cmd_list "$@" ;;
+    show)     shift; cmd_show "$@" ;;
+    update)   shift; cmd_update "$@" ;;
+    comment)  shift; cmd_comment "$@" ;;
+    comments) shift; cmd_comments "$@" ;;
+    block)    shift; cmd_block "$@" ;;
+    unblock)  shift; cmd_unblock "$@" ;;
+    deps)     shift; cmd_deps "$@" ;;
+    label)    shift; cmd_label "$@" ;;
+    unlabel)  shift; cmd_unlabel "$@" ;;
+    labels)   shift; cmd_labels "$@" ;;
+    delete)   shift; cmd_delete "$@" ;;
+    search)   shift; cmd_search "$@" ;;
+    help|-h|--help) usage ;;
+    *) echo "error: unknown command '$1'" >&2; usage; exit 1 ;;
+esac
