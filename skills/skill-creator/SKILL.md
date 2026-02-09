@@ -269,29 +269,9 @@ Store artifacts in `/tmp/claude-${CLAUDE_SESSION_ID}/` for session isolation.
 
 ## Dynamic Context Injection
 
-The `!`command`` syntax runs shell commands BEFORE skill content is sent to Claude. Output replaces the placeholder — this is preprocessing, not something Claude executes.
+The exclamation-backtick syntax runs shell commands BEFORE skill content is sent to Claude. Output replaces the placeholder — this is preprocessing, not something Claude executes.
 
-```yaml
----
-name: pr-summary
-description: Summarize changes in a pull request
-context: fork
-agent: Explore
----
-
-## Pull request context
-- PR diff: !`gh pr diff`
-- PR comments: !`gh pr view --comments`
-- Changed files: !`gh pr diff --name-only`
-
-## Task
-Summarize this pull request.
-```
-
-Use cases:
-- Injecting live git state, PR data, environment info
-- Fetching API responses or config before Claude processes
-- Providing real-time context without Claude needing tool access
+Use cases: injecting live git state, PR data, environment info, API responses, or config before Claude processes the skill content.
 
 ## Skill Spec (Condensed)
 
