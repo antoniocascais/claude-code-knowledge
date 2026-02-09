@@ -1,5 +1,8 @@
 {
   "cleanupPeriodDays": 30,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
@@ -17,6 +20,7 @@
       "Bash(gitleaks:*)",
       "Bash(trivy:*)",
       "Bash(ctask:*)",
+      "Skill(ctask)",
       "Bash(make:*)"
     ],
     "deny": [
@@ -37,6 +41,7 @@
       "Bash(npx vitest:*)"
     ]
   },
+  "model": "opus",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -144,16 +149,12 @@
     "frontend-design@claude-code-plugins": true,
     "gopls-lsp@claude-plugins-official": true
   },
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
+  "outputStyle": "Kitty Safe",
   "promptSuggestionEnabled": false,
   "additionalDirectories": [
     "~/Documents/claude/"
   ],
   "feedbackSurveyState": {
     "lastShownTime": 1753975711695
-  },
-  "model": "opus",
-  "outputStyle": "Kitty Safe"
+  }
 }
