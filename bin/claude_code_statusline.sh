@@ -264,6 +264,17 @@ parse_session_usage() {
     echo "${percentage:-0}"
 }
 
+# Normalize reset time string (fix spaces stripped by ANSI removal)
+# "ResetsFeb12,12pm(Europe/Berlin)" -> "Feb 12, 12pm"
+normalize_reset_string() {
+    local raw="$1"
+    raw=$(echo "$raw" | sed 's/^[[:space:]]*Resets *//')
+    raw=$(echo "$raw" | sed 's/[[:space:]]*(.*$//')
+    # Re-insert spaces: "Feb12,12pm" -> "Feb 12, 12pm"
+    raw=$(echo "$raw" | sed 's/\([A-Za-z]\)\([0-9]\)/\1 \2/g; s/,\([^ ]\)/, \1/g')
+    echo "$raw"
+}
+
 # Parse usage log for session reset time
 parse_session_reset() {
     if [[ ! -f "$USAGE_LOG" ]]; then
@@ -275,20 +286,21 @@ parse_session_reset() {
     session_line=$(grep -m 1 "Current session" "$USAGE_LOG")
 
     if [[ -n "$session_line" ]]; then
-        # Extract "Resets8pm" or "Resets 8pm" -> "8pm"
-        local reset_info
-        reset_info=$(echo "$session_line" | grep -oE 'Resets ?[0-9]+:?[0-9]*[ap]m' | sed 's/Resets *//')
-        if [[ -n "$reset_info" ]]; then
-            echo "$reset_info"
+        # "Resets" text is often garbled by ANSI stripping ("Reses", "Reset", etc.)
+        # Extract the time pattern directly — session resets show just a time like "3pm" or "2:59pm"
+        local reset_time
+        reset_time=$(echo "$session_line" | sed 's/.*%used//' | grep -oE '[0-9]+:?[0-9]*[ap]m' | head -1)
+        if [[ -n "$reset_time" ]]; then
+            echo "$reset_time"
             return
         fi
     fi
 
     # Fallback: check for "Resets" on next lines
     local reset_line
-    reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep "Resets" | head -1)
+    reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep -i "Reset" | head -1)
     if [[ -n "$reset_line" ]]; then
-        echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//'
+        normalize_reset_string "$reset_line"
     fi
 }
 
@@ -300,7 +312,7 @@ parse_week_usage() {
     fi
 
     local week_line
-    week_line=$(grep -A 1 "Current week (all models)" "$USAGE_LOG" | tail -1)
+    week_line=$(grep -A 1 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | tail -1)
 
     local percentage=""
     if [[ -n "$week_line" ]]; then
@@ -325,11 +337,11 @@ parse_week_reset() {
     fi
 
     local reset_line
-    reset_line=$(grep -A 2 "Current week (all models)" "$USAGE_LOG" | grep "Resets" | head -1)
+    reset_line=$(grep -A 2 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | grep -i "resets" | head -1)
     local reset_info=""
 
     if [[ -n "$reset_line" ]]; then
-        reset_info=$(echo "$reset_line" | sed 's/^[[:space:]]*Resets //' | sed 's/ (.*$//')
+        reset_info=$(normalize_reset_string "$reset_line")
     fi
 
     if [[ -z "$reset_info" ]]; then
