@@ -1,6 +1,6 @@
 ---
 name: c7
-description: Fetches up-to-date library documentation from Context7 and saves to /tmp/context7/. Use when needing current API docs, code examples, library references, SDK documentation, or checking latest library versions. Triggers: context7, c7, library docs, fetch docs, current documentation, api reference.
+description: "Fetches up-to-date library documentation from Context7 and saves to /tmp/context7/. Use when needing current API docs, code examples, library references, SDK documentation, or checking latest library versions. Triggers: context7, c7, library docs, fetch docs, current documentation, api reference."
 allowed-tools:
   - Bash(scripts/c7.sh:*)
   - AskUserQuestion
