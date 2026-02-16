@@ -1,14 +1,13 @@
 ---
 name: skill-creator
 description: Creates new Claude Code skills with proper structure and best practices. Use when user wants to create a skill, update an existing skill, add a new command, scaffold a workflow, define skill hooks, or asks "how do I make a skill".
-allowed-tools: Read Glob Grep AskUserQuestion
+allowed-tools: Read Write Glob Grep AskUserQuestion
+argument-hint: [use-case-description]
 ---
 
 # Skill Creator
 
 Creates Claude Code skills following official best practices.
-
-**Official spec**: https://agentskills.io/specification (append `.md` for markdown)
 
 ## Core Principles
 
@@ -273,67 +272,74 @@ The exclamation-backtick syntax runs shell commands BEFORE skill content is sent
 
 Use cases: injecting live git state, PR data, environment info, API responses, or config before Claude processes the skill content.
 
-## Skill Spec (Condensed)
+## Quick Reference
 
-### Required Frontmatter (base spec)
-- `name`: lowercase, hyphens, ≤64 chars, must match directory name
-- `description`: what + when (triggers), third person, ≤1024 chars
+For the condensed field spec, directory structure, and description budget, see `references/spec-reference.md`.
 
-### Optional Frontmatter (base spec — portable)
-- `allowed-tools`: pre-approved tools (space-delimited or YAML list) [experimental]
-- `license`: e.g., "MIT"
-- `compatibility`: environment requirements, ≤500 chars (most skills don't need this)
-- `metadata`: arbitrary key-value mapping
+## Example Output
 
-### Optional Frontmatter (Claude Code extensions)
-- `disable-model-invocation`: `true` to prevent Claude auto-invocation (default: `false`)
-- `user-invocable`: `false` to hide from slash command menu (default: `true`)
-- `argument-hint`: autocomplete hint for expected arguments
-- `model`: model override (e.g., `haiku`, `sonnet`, `opus`)
-- `context`: `fork` for isolated sub-agent execution
-- `agent`: agent type when forked (e.g., `Explore`, `Plan`, `general-purpose`)
-- `hooks`: skill-specific lifecycle hooks (see `references/hooks.md`)
+A generated simple skill should look like this:
 
-### Body Guidelines
-- Keep under 500 lines
-- Use progressive disclosure: split to references/ when approaching limit
-- No time-sensitive information
-- Consistent terminology
-- Use imperative/infinitive form for instructions
-
-### Directory Structure
-```
-skill-name/
-├── SKILL.md           # Required entry point
-├── scripts/           # Executables (run, don't read)
-├── references/        # Docs loaded as needed
-└── assets/            # Templates, images, fonts, static files
+```yaml
+---
+name: test-notification-sender
+description: Sends test notifications to configured channels. Use when testing alerting pipelines, verifying webhook delivery, or debugging notification routing.
+allowed-tools: Read Bash(curl:*)
+disable-model-invocation: true
+---
 ```
 
-### Reference Files
-- Keep one level deep from SKILL.md (no nested references)
-- Files >100 lines should include a TOC at the top
+```markdown
+# Test Notification Sender
 
-### Description Budget
-Skill descriptions are loaded into context at startup. Budget is 2% of context window (fallback: 16K chars). If many skills exist, some may be excluded — check with `/context`.
+Send test notifications to verify alerting pipelines.
 
-## Examples
+## Instructions
 
-Clone the official repo for real examples:
+### Step 1: Identify Target
+Use AskUserQuestion to confirm:
+- Channel type (Slack, PagerDuty, email, webhook)
+- Environment (staging/production)
 
-```bash
-git clone https://github.com/anthropics/skills.git /tmp/claude-skills-examples
+### Step 2: Send Test
+Run the appropriate curl command for the channel type.
+Include a timestamp and session identifier in the payload.
+
+### Step 3: Verify Delivery
+Confirm the notification was received. If it fails:
+- Check webhook URL is reachable
+- Verify auth token is valid
+- Check channel/routing configuration
+
+## Common Issues
+
+### Slack returns 403
+Token scope missing. Needs `chat:write` and `incoming-webhook`.
+
+### PagerDuty dedup
+Test events with same dedup_key merge. Use unique keys per test.
 ```
 
-**Example patterns:**
+Note: `disable-model-invocation: true` because this skill has side effects (sends real notifications).
 
-| Skill | Shows |
-|-------|-------|
-| `mcp-builder/` | reference/ + scripts/ |
-| `algorithmic-art/` | assets/ for HTML output |
-| `docx/` | scripts/ + reference docs |
-| `pptx/` | Complex: scripts/, ooxml/, multiple reference docs |
-| `skill-creator/` | Meta: references/workflows.md, init/package scripts |
+For more examples, clone the official repo: `git clone https://github.com/anthropics/skills.git /tmp/claude-skills-examples`
+
+## Troubleshooting
+
+### Skill name collision
+Before creating, check if a skill already exists: `ls ~/.claude/skills/{name}/`. If it does, ask the user whether to update or choose a different name.
+
+### YAML parse errors
+Common causes:
+- Description contains unquoted colons — wrap in quotes: `description: "Deploy helper: automates releases"`
+- Missing `---` delimiters (need both opening and closing)
+- Indentation mismatch in YAML lists
+
+### Skill not triggering after creation
+The description is the primary discovery mechanism. Check:
+- Does it include trigger phrases users would actually say?
+- Is it too generic? ("Helps with projects" won't trigger)
+- Is it too narrow? Missing synonyms or paraphrases
 
 ## Best Practices Checklist
 
