@@ -1,8 +1,9 @@
 ---
 name: skill-creator
 description: Creates new Claude Code skills with proper structure and best practices. Use when user wants to create a skill, update an existing skill, add a new command, scaffold a workflow, define skill hooks, or asks "how do I make a skill".
-allowed-tools: Read Write Glob Grep AskUserQuestion
+allowed-tools: Read Write Edit Glob Grep AskUserQuestion
 argument-hint: [use-case-description]
+compatibility: Claude Code (uses context, agent, model, and hooks extensions)
 ---
 
 # Skill Creator
@@ -97,8 +98,6 @@ Use AskUserQuestion to collect:
 
 **Default location**: `~/.claude/skills/{skill-name}/`
 
-**Note**: `.claude/commands/` files still work and support the same frontmatter, but skills are preferred. If a skill and command share the same name, the skill takes precedence.
-
 Create `SKILL.md` with:
 
 ```yaml
@@ -157,120 +156,24 @@ Two fields control who can invoke a skill and how it loads into context:
 **Conditional**: Decision trees based on input type or user choice (see `webapp-testing/`)
 **Multi-phase**: Plan → validate → execute → verify (for destructive operations)
 
-### Enforcing Phase Gates
+For enforcing phase gates (hard stops between phases), see `references/advanced-features.md`.
 
-Claude tends to rush ahead. To force hard stops between phases, use `AskUserQuestion` as a gate:
-
-```markdown
-## Phase 1: Gather Input
-
-**STOP. Use AskUserQuestion before proceeding.**
-
-[phase instructions...]
-
-**Do NOT proceed to Phase 2 until user responds.**
-
-## Phase 2: Confirm Understanding
-
-**STOP. Use AskUserQuestion to confirm before execution.**
-
-[present what you understood, then ask confirmation...]
-
-**Do NOT proceed to Phase 3 until user confirms.**
-```
-
-Key elements:
-- Bold **STOP** directive at phase start
-- Explicit instruction to use `AskUserQuestion`
-- Clear "do NOT proceed until..." at phase end
-
-## Resource Types
-
-| Type | Purpose | Context Loading |
-|------|---------|-----------------|
-| `scripts/` | Executables for deterministic tasks | Run as black-box, don't read into context |
-| `references/` | Documentation, API specs | Loaded on-demand when needed |
-| `assets/` | Templates, images, fonts, static files | Used in output, not loaded into context |
+For resource types (scripts/, references/, assets/) and their context loading behavior, see `references/spec-reference.md`.
 
 ## Anti-Patterns
 
 - No README.md, CHANGELOG.md, INSTALLATION_GUIDE.md — only include what Claude needs to execute
 - No "When to Use This Skill" in body — triggers come from description; body loads AFTER triggering
 - No duplicated info between SKILL.md and references/ — pick one location
-- No deeply nested references — keep one level deep from SKILL.md
+- No deeply nested references — keep one level deep from SKILL.md (except `examples/` subdirectories)
 - No time-sensitive information (dates, version-specific instructions that will rot)
 - No hardcoded absolute paths
 
-## Isolated Execution
+## Advanced Features
 
-Use `context: fork` for skills that need isolated sub-agent context:
+For isolated execution (`context: fork`), string substitution (`$ARGUMENTS`), dynamic context injection, phase gates, and skill hooks — see `references/advanced-features.md`.
 
-```yaml
----
-name: code-analyzer
-context: fork
-agent: Explore
----
-```
-
-When forked:
-- Skill runs in separate context with no conversation history
-- Skill content becomes the subagent's task prompt
-- `agent` field determines execution environment (Explore, Plan, general-purpose, or custom)
-- Results returned to main context
-
-**Important**: `context: fork` only makes sense for skills with explicit actionable tasks. If the skill is just guidelines, the subagent receives guidelines but no task.
-
-## Skill Hooks
-
-Skills can define lifecycle hooks scoped to their execution. See `references/hooks.md` for full documentation.
-
-Quick example:
-```yaml
-hooks:
-  PostToolUse:
-    - matcher: Write
-      hooks:
-        - type: command
-          command: "jq -r '.tool_input.file_path' | xargs -I{} ./validate.sh \"{}\""
-```
-
-## String Substitution Variables
-
-Available variables for dynamic values in SKILL.md:
-
-| Variable | Description | Example Use |
-|----------|-------------|-------------|
-| `$ARGUMENTS` | All arguments passed when invoking | `/skill-name arg1 arg2` → body receives both |
-| `$ARGUMENTS[N]` / `$N` | Specific argument by 0-based index | `$0` = first arg, `$1` = second |
-| `${CLAUDE_SESSION_ID}` | Current session UUID | Audit logs, session-specific temp dirs |
-
-If `$ARGUMENTS` is not present in the content, arguments are appended as `ARGUMENTS: <value>`.
-
-**Example — positional arguments:**
-
-```yaml
----
-name: migrate-component
-description: Migrate a component between frameworks
-argument-hint: [component] [from-framework] [to-framework]
----
-
-Migrate the $0 component from $1 to $2.
-Preserve all existing behavior and tests.
-```
-
-**Example — session isolation:**
-
-```markdown
-Store artifacts in `/tmp/claude-${CLAUDE_SESSION_ID}/` for session isolation.
-```
-
-## Dynamic Context Injection
-
-The exclamation-backtick syntax runs shell commands BEFORE skill content is sent to Claude. Output replaces the placeholder — this is preprocessing, not something Claude executes.
-
-Use cases: injecting live git state, PR data, environment info, API responses, or config before Claude processes the skill content.
+For skill hook syntax and patterns, see `references/hooks.md`.
 
 ## Quick Reference
 
@@ -278,51 +181,11 @@ For the condensed field spec, directory structure, and description budget, see `
 
 ## Example Output
 
-A generated simple skill should look like this:
+Generated skill examples at each complexity level:
+- `references/examples/simple.md` — SKILL.md only, no resources
+- `references/examples/medium.md` — with references/ and allowed-tools
 
-```yaml
----
-name: test-notification-sender
-description: Sends test notifications to configured channels. Use when testing alerting pipelines, verifying webhook delivery, or debugging notification routing.
-allowed-tools: Read Bash(curl:*)
-disable-model-invocation: true
----
-```
-
-```markdown
-# Test Notification Sender
-
-Send test notifications to verify alerting pipelines.
-
-## Instructions
-
-### Step 1: Identify Target
-Use AskUserQuestion to confirm:
-- Channel type (Slack, PagerDuty, email, webhook)
-- Environment (staging/production)
-
-### Step 2: Send Test
-Run the appropriate curl command for the channel type.
-Include a timestamp and session identifier in the payload.
-
-### Step 3: Verify Delivery
-Confirm the notification was received. If it fails:
-- Check webhook URL is reachable
-- Verify auth token is valid
-- Check channel/routing configuration
-
-## Common Issues
-
-### Slack returns 403
-Token scope missing. Needs `chat:write` and `incoming-webhook`.
-
-### PagerDuty dedup
-Test events with same dedup_key merge. Use unique keys per test.
-```
-
-Note: `disable-model-invocation: true` because this skill has side effects (sends real notifications).
-
-For more examples, clone the official repo: `git clone https://github.com/anthropics/skills.git /tmp/claude-skills-examples`
+Use these as templates when generating skills. For more examples: `git clone https://github.com/anthropics/skills.git /tmp/claude-skills-examples`
 
 ## Troubleshooting
 
@@ -353,6 +216,7 @@ Before finalizing:
 - [ ] No "When to Use" section in body (triggers belong in description)
 - [ ] Consistent terminology throughout
 - [ ] Reference files >100 lines have TOC
-- [ ] References one level deep (no nesting)
+- [ ] References one level deep (except `examples/` subdirectories)
 - [ ] Scripts are black-box (documented inputs/outputs, not read into context)
 - [ ] Skills with side effects use `disable-model-invocation: true`
+- [ ] Skills using Claude Code extensions include `compatibility` field

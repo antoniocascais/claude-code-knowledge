@@ -32,6 +32,14 @@ Condensed field reference for quick lookup. For full context and examples, see t
 - Consistent terminology
 - Use imperative/infinitive form for instructions
 
+## Resource Types
+
+| Type | Purpose | Context Loading |
+|------|---------|-----------------|
+| `scripts/` | Executables for deterministic tasks | Run as black-box, don't read into context |
+| `references/` | Documentation, API specs | Loaded on-demand when needed |
+| `assets/` | Templates, images, fonts, static files | Used in output, not loaded into context |
+
 ## Directory Structure
 
 ```
@@ -39,12 +47,13 @@ skill-name/
 ├── SKILL.md           # Required entry point
 ├── scripts/           # Executables (run, don't read)
 ├── references/        # Docs loaded as needed
+│   └── examples/      # Example outputs (allowed subdirectory)
 └── assets/            # Templates, images, fonts, static files
 ```
 
 ## Reference Files
 
-- Keep one level deep from SKILL.md (no nested references)
+- Keep one level deep from SKILL.md (except `examples/` subdirectories)
 - Files >100 lines should include a TOC at the top
 
 ## Description Budget
