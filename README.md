@@ -18,6 +18,7 @@ My Claude Code configs — grab what you need.
 | `ctask` | Local task tracker — manages tasks, dependencies, comments, labels via SQLite |
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `c7` | Fetches up-to-date library docs from Context7, saves to /tmp/context7/ |
+| `voice-mode` | TTS transport layer using [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) — speaks all responses, composable with other skills |
 
 ### Commands
 | Command | Description |
@@ -135,6 +136,33 @@ ln -s "$(pwd)/skills/ctask/bin/ctask" ~/bin/ctask   # or anywhere on $PATH
 Override the database location with `CTASK_DB` env var (default: `~/Documents/claude/tasks.db`). Database auto-initializes on first use.
 
 **Requirements:** `sqlite3`
+
+### voice-mode (TTS Responses)
+
+Speaks all Claude responses aloud using [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) running in Docker.
+
+**Invocation:** `/voice-mode` or `/voice-mode jean` (to pick a voice)
+
+**Setup:**
+```bash
+# 1. Clone and start Pocket TTS
+git clone https://github.com/kyutai-labs/pocket-tts.git
+cd pocket-tts && docker compose up -d
+
+# 2. Install mpv (audio playback)
+# Arch/Manjaro: pacman -S mpv
+# Ubuntu/Debian: apt install mpv
+# macOS: brew install mpv
+```
+
+**Environment variables (all optional):**
+- `POCKET_TTS_PORT` — server port
+- `POCKET_TTS_VOICE` — voice name
+- `POCKET_TTS_SPEED` — playback speed
+
+**Available voices:** alba, marius, javert, jean, fantine, cosette, eponine, azelma
+
+**Requirements:** Docker, mpv, curl
 
 ### workflow-review
 
