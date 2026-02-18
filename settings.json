@@ -22,7 +22,9 @@
       "Bash(trivy:*)",
       "Bash(ctask:*)",
       "Skill(ctask)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Skill(voice-mode)",
+      "Bash(~/.claude/skills/voice-mode/scripts/tts.sh:*)"
     ],
     "deny": [
       "Bash(docker build:*)",
