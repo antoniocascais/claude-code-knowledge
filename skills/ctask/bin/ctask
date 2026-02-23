@@ -16,7 +16,8 @@ CREATE TABLE tasks (
     priority TEXT DEFAULT 'medium' CHECK(priority IN ('low','medium','high','critical')),
     project TEXT DEFAULT '',
     created_at DATETIME DEFAULT (datetime('now')),
-    updated_at DATETIME DEFAULT (datetime('now'))
+    updated_at DATETIME DEFAULT (datetime('now')),
+    deleted_at DATETIME DEFAULT NULL
 );
 CREATE TABLE comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,6 +38,10 @@ CREATE TABLE labels (
 SQL
     echo "Initialized ctask database at $DB"
 fi
+
+# Migrate: add deleted_at column if missing
+sqlite3 "$DB" "SELECT deleted_at FROM tasks LIMIT 0;" 2>/dev/null || \
+    sqlite3 "$DB" "ALTER TABLE tasks ADD COLUMN deleted_at DATETIME DEFAULT NULL;"
 
 sql() { $SQLITE "$DB" "PRAGMA foreign_keys=ON; $1"; }
 
@@ -62,6 +67,8 @@ Usage:
   ctask unlabel <id> <label>
   ctask labels <id>
   ctask delete <id>
+  ctask restore <id>
+  ctask purge <id>
   ctask search <query>
 
 Environment:
@@ -71,12 +78,14 @@ EOF
 
 cmd_create() {
     local title="" desc="" priority="medium" project=""
+    [[ "${1:-}" =~ ^(-h|--help)$ ]] && { usage; return 0; }
     title="$1"; shift || { echo "error: title required" >&2; return 1; }
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --desc)     desc="$2"; shift 2 ;;
             --priority) valid_priority "$2"; priority="$2"; shift 2 ;;
             --project)  project="$2"; shift 2 ;;
+            -h|--help)  usage; return 0 ;;
             *) echo "error: unknown flag $1" >&2; return 1 ;;
         esac
     done
@@ -86,7 +95,7 @@ cmd_create() {
 }
 
 cmd_list() {
-    local where="status != 'cancelled'" all=false
+    local where="deleted_at IS NULL AND status != 'cancelled'" all=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --status)  valid_status "$2"; where="$where AND status = '$2'"; shift 2 ;;
@@ -96,7 +105,7 @@ cmd_list() {
             *) echo "error: unknown flag $1" >&2; return 1 ;;
         esac
     done
-    if $all; then where="1=1"; fi
+    if $all; then where="deleted_at IS NULL"; fi
     sql "SELECT id, title, status, priority, project, created_at FROM tasks WHERE $where ORDER BY
         CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END,
         created_at DESC;"
@@ -207,13 +216,25 @@ cmd_labels() {
 
 cmd_delete() {
     valid_id "$1"
-    sql "DELETE FROM tasks WHERE id = $1;"
-    echo "Deleted task #$1"
+    sql "UPDATE tasks SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = $1 AND deleted_at IS NULL;"
+    echo "Soft-deleted task #$1 (use 'ctask restore $1' to undo)"
+}
+
+cmd_restore() {
+    valid_id "$1"
+    sql "UPDATE tasks SET deleted_at = NULL, updated_at = datetime('now') WHERE id = $1 AND deleted_at IS NOT NULL;"
+    echo "Restored task #$1"
+}
+
+cmd_purge() {
+    valid_id "$1"
+    sql "DELETE FROM tasks WHERE id = $1 AND deleted_at IS NOT NULL;"
+    echo "Permanently deleted task #$1"
 }
 
 cmd_search() {
     local q="%$*%"
-    sql "SELECT id, title, status, priority FROM tasks WHERE title LIKE '$(sed "s/'/''/g" <<< "$q")' OR description LIKE '$(sed "s/'/''/g" <<< "$q")' ORDER BY created_at DESC;"
+    sql "SELECT id, title, status, priority FROM tasks WHERE deleted_at IS NULL AND (title LIKE '$(sed "s/'/''/g" <<< "$q")' OR description LIKE '$(sed "s/'/''/g" <<< "$q")') ORDER BY created_at DESC;"
 }
 
 [[ $# -eq 0 ]] && { usage; exit 0; }
@@ -232,6 +253,8 @@ case "$1" in
     unlabel)  shift; cmd_unlabel "$@" ;;
     labels)   shift; cmd_labels "$@" ;;
     delete)   shift; cmd_delete "$@" ;;
+    restore)  shift; cmd_restore "$@" ;;
+    purge)    shift; cmd_purge "$@" ;;
     search)   shift; cmd_search "$@" ;;
     help|-h|--help) usage ;;
     *) echo "error: unknown command '$1'" >&2; usage; exit 1 ;;
