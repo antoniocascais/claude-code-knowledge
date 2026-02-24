@@ -24,7 +24,17 @@
       "Skill(ctask)",
       "Bash(make:*)",
       "Skill(voice-mode)",
-      "Bash(~/.claude/skills/voice-mode/scripts/tts.sh:*)"
+      "Bash(~/.claude/skills/voice-mode/scripts/tts.sh:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker images:*)",
+      "Bash(docker inspect:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker stats:*)",
+      "Bash(docker network ls:*)",
+      "Bash(docker volume ls:*)",
+      "Bash(helm pull:*)",
+      "Bash(helm template:*)",
+      "Bash(helm dependency:*)"
     ],
     "deny": [
       "Bash(docker build:*)",
