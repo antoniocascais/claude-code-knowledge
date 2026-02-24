@@ -8,6 +8,14 @@ command=$(echo "$input" | jq -r '.tool_input.command // empty')
 
 [[ -z "$command" ]] && exit 0
 
+# Block rm commands — user should remove files themselves
+if echo "$command" | grep -qE '(^|[;&|]\s*)rm\s'; then
+  echo "🚫 Blocked: Claude cannot delete files. Please run this yourself:" >&2
+  echo "" >&2
+  echo "  $command" >&2
+  exit 2
+fi
+
 # Block .env patterns (allow .example/.sample/.template)
 # Match: .env, .env.local, .env.production, etc.
 # Allow: .env.example, .env.sample, .env.template
