@@ -191,6 +191,101 @@ def search(files: list[Path], query: str, top_k: int = 10) -> str:
     return json.dumps({"results": search_results, "query": query, "total": len(search_results)}, indent=2)
 
 
+PATTERNS: dict[str, dict[str, str]] = {
+    "permission_fatigue": {
+        "query": "permission denied approved allow",
+        "detects": "Repeatedly approving the same tools",
+    },
+    "bash_for_file_ops": {
+        "query": "bash cat grep find sed awk echo",
+        "detects": "Bash used instead of dedicated tools (Read/Edit/Grep/Glob)",
+    },
+    "recurring_errors": {
+        "query": "error retry failed traceback exception",
+        "detects": "Recurring errors and retries",
+    },
+    "subagent_issues": {
+        "query": "task subagent fork context denied",
+        "detects": "Subagent context starvation or access failures",
+    },
+    "context_pressure": {
+        "query": "compact context token limit",
+        "detects": "Context window pressure and compaction events",
+    },
+    "glob_via_bash": {
+        "query": "find . -name ls -la ls -r find / -type",
+        "detects": "Using find/ls instead of Glob tool",
+    },
+    "grep_via_bash": {
+        "query": "grep -r grep -n grep -i rg ripgrep",
+        "detects": "Using shell grep/rg instead of Grep tool",
+    },
+    "edit_via_heredoc": {
+        "query": "cat > << EOF tee sed -i awk -i",
+        "detects": "Writing files via bash instead of Edit/Write tools",
+    },
+    "revert_churn": {
+        "query": "revert undo restore original rollback go back previous",
+        "detects": "Frequent reversals — poor planning or scope disagreement",
+    },
+    "clarification_loop": {
+        "query": "what do you mean clarify which file which directory",
+        "detects": "Excessive clarification — under-specified project context",
+    },
+    "debug_loop": {
+        "query": "still failing same error tried that already doesn't work",
+        "detects": "Stuck debugging loops",
+    },
+    "hallucinated_api": {
+        "query": "doesn't exist no such attribute ImportError ModuleNotFoundError",
+        "detects": "Claude using non-existent APIs",
+    },
+}
+
+
+def patterns(files: list[Path], top_k: int = 5) -> str:
+    corpus, retriever, _convs = _build_index(files)
+
+    if retriever is None or not corpus:
+        return json.dumps({"patterns": {}, "total_files": 0}, indent=2)
+
+    import bm25s
+
+    results_by_pattern: dict[str, list[dict]] = {}
+    for name, info in PATTERNS.items():
+        query_tokens = bm25s.tokenize([info["query"]], stopwords="en")
+        results, scores = retriever.retrieve(query_tokens, k=min(top_k, len(corpus)))
+
+        hits: list[dict] = []
+        for i in range(results.shape[1]):
+            doc_idx = results[0, i]
+            score = float(scores[0, i])
+            if score <= 0:
+                continue
+            entry = corpus[doc_idx]
+            hits.append({
+                "session_id": entry["session_id"],
+                "project": entry["project"],
+                "slug": entry["slug"],
+                "turn_number": entry["turn_number"],
+                "score": round(score, 4),
+                "snippet": entry["text"][:300],
+            })
+
+        results_by_pattern[name] = {
+            "detects": info["detects"],
+            "hits": len(hits),
+            "results": hits,
+        }
+
+    # Sort by hit count descending
+    sorted_patterns = dict(
+        sorted(results_by_pattern.items(), key=lambda x: x[1]["hits"], reverse=True)
+    )
+
+    return json.dumps({"patterns": sorted_patterns, "total_files": len(files)}, indent=2)
+
+
 def stats(files: list[Path]) -> str:
     total_sessions = 0
     total_turns = 0
@@ -224,7 +319,7 @@ def main() -> None:
     parser.add_argument("--top-k", type=int, default=10, help="Max results (default 10)")
     parser.add_argument("--recent-days", type=int, default=None, help="Filter by file mtime (days)")
     parser.add_argument("--project", default=None, help="Filter by project dir name substring")
-    parser.add_argument("--mode", choices=["search", "stats"], default="search", help="Mode (default: search)")
+    parser.add_argument("--mode", choices=["search", "stats", "patterns"], default="search", help="Mode (default: search)")
     args = parser.parse_args()
 
     conv_dir = Path(args.conversations_dir).resolve()
@@ -236,6 +331,8 @@ def main() -> None:
 
     if args.mode == "stats":
         print(stats(files))
+    elif args.mode == "patterns":
+        print(patterns(files, args.top_k))
     else:
         if not args.query:
             print("Error: query is required for search mode", file=sys.stderr)

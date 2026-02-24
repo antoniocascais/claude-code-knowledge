@@ -41,30 +41,23 @@ Run aggregate stats to understand overall tool usage:
 ~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects --mode stats --recent-days 7
 ```
 
-### Step 2: Search Transcripts
+### Step 2: Run Pattern Detection
 
-Run targeted BM25 queries to detect patterns:
-
+Run all 12 built-in anti-pattern queries in one shot:
 ```bash
-# Permission fatigue — tools repeatedly approved
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "permission denied approved allow" --recent-days 7 --top-k 15
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects --mode patterns --recent-days 7 --top-k 10
+```
 
-# Bash misuse — shell used instead of dedicated tools
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "bash cat grep find sed awk echo" --recent-days 7 --top-k 15
+Built-in patterns: `permission_fatigue`, `bash_for_file_ops`, `recurring_errors`, `subagent_issues`, `context_pressure`, `glob_via_bash`, `grep_via_bash`, `edit_via_heredoc`, `revert_churn`, `clarification_loop`, `debug_loop`, `hallucinated_api`.
 
-# Recurring errors — retries and failures
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "error retry failed traceback exception" --recent-days 7 --top-k 15
-
-# Subagent issues — context starvation
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "task subagent fork context" --recent-days 7 --top-k 15
-
-# Context pressure — compaction events
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "compact context token limit" --recent-days 7 --top-k 15
+For ad-hoc investigation, use search mode with a custom query:
+```bash
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "your query here" --recent-days 7 --top-k 15
 ```
 
 Scope to current project with `--project` (use the encoded cwd directory name):
 ```bash
-~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "permission denied" --project "<encoded-cwd>" --recent-days 7
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects --mode patterns --project "<encoded-cwd>" --recent-days 7
 ```
 
 ### Step 3: Synthesize Results
