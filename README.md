@@ -13,7 +13,7 @@ My Claude Code configs — grab what you need.
 | `note-taking` | Task notes + knowledge base management |
 | `planner` | Task capture and organization |
 | `codemap` | Generate codebase maps with architecture diagrams (WIP - still testing) |
-| `workflow-review` | Reviews CC sessions and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
+| `workflow-review` | Reviews CC sessions via [BM25 cross-session search](https://eric-tramel.github.io/blog/2026-02-07-searchable-agent-memory/) and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
 | `codex` | AI peer review via OpenAI Codex CLI — Claude consults Codex for code review, architecture decisions, and trade-off validation |
 | `ctask` | Local task tracker — manages tasks, dependencies, comments, labels via SQLite |
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
@@ -166,66 +166,9 @@ cd pocket-tts && docker compose up -d
 
 ### workflow-review
 
-Requires hooks in `~/.claude/settings.json` for automatic session tracking.
+No setup required. Uses BM25 search over `~/.claude/projects/` transcripts — runs on-demand via `/workflow-review`.
 
-**If you don't have a `hooks` section yet**, add this entire block:
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/message-counter.sh"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/session-start.sh"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/session-end.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/pre-compact.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-**If you already have a `hooks` section**, add the `UserPromptSubmit`, `SessionStart`, and `SessionEnd` entries inside it.
-
-**Dependencies:** `jq` (scripts check for availability and fail gracefully)
-
-**Error logs:** `/tmp/claude-workflow-review-error.log`
+**Dependencies:** `uv` (for inline script deps)
 
 ## License
 

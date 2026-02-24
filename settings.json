@@ -46,50 +46,13 @@
   },
   "model": "opus",
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/message-counter.sh"
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/session-start.sh"
-          },
-          {
-            "type": "command",
             "command": "echo 'export BASH_ENV=~/Documents/ai/bin/gh-function.sh' >> \"$CLAUDE_ENV_FILE\""
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/session-end.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/skills/workflow-review/scripts/pre-compact.sh"
           }
         ]
       }

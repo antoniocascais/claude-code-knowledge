@@ -6,9 +6,10 @@ description: |
   (3) after long sessions when nudged, (4) start of session with pending review.
   Analyzes tool usage patterns, CLAUDE.md configuration, and compares against
   CC best practices. Proposes: CLAUDE.md updates, new skills, underused CC features.
-  Read-only analysis - does not modify files directly.
+  Saves session summaries to .claude/workflow-reviews/ for cross-session continuity.
 allowed-tools:
   - Read
+  - Write
   - Glob
   - Grep
   - Bash(~/.claude/skills/workflow-review/scripts/*:*)
@@ -18,56 +19,62 @@ allowed-tools:
 
 # Workflow Review Skill
 
-You analyze Claude Code sessions and propose workflow improvements. You are READ-ONLY - you propose changes, the user applies them manually.
+You analyze Claude Code sessions and propose workflow improvements. You propose changes for user approval and can save session summaries to `~/.claude/workflow-reviews/`.
 
 ## Core Behavior
 
-1. **Analyze** current session via forked transcript analysis
+1. **Analyze** sessions via BM25 cross-session search
 2. **Read** project's CLAUDE.md and .claude/ configuration
 3. **Research** CC best practices via claude-code-guide agent
 4. **Compare** current setup against best practices
 5. **Propose** improvements via interactive approval
 6. **User applies** changes manually
 
-## Transcript Analysis (Forked Context)
+## Transcript Analysis (BM25 Cross-Session Search)
 
-Heavy transcript analysis runs in a forked context to keep main conversation clean.
+Uses [BM25 search](https://eric-tramel.github.io/blog/2026-02-07-searchable-agent-memory/) across conversation transcripts — no forked context needed.
 
-### Step 1: Find Transcript Path
+### Step 1: Gather Stats
 
-Run the helper script to find current session's transcript:
+Run aggregate stats to understand overall tool usage:
 ```bash
-TRANSCRIPT=$(~/.claude/skills/workflow-review/scripts/get-transcript-path.sh "$(pwd)")
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects --mode stats --recent-days 7
 ```
 
-Transcripts are stored at: `~/.claude/projects/{encoded-cwd}/{session-id}.jsonl`
+### Step 2: Search Transcripts
 
-### Step 2: Spawn Forked Analyzer
+Run targeted BM25 queries to detect patterns:
 
+```bash
+# Permission fatigue — tools repeatedly approved
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "permission denied approved allow" --recent-days 7 --top-k 15
+
+# Bash misuse — shell used instead of dedicated tools
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "bash cat grep find sed awk echo" --recent-days 7 --top-k 15
+
+# Recurring errors — retries and failures
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "error retry failed traceback exception" --recent-days 7 --top-k 15
+
+# Subagent issues — context starvation
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "task subagent fork context" --recent-days 7 --top-k 15
+
+# Context pressure — compaction events
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "compact context token limit" --recent-days 7 --top-k 15
 ```
-Task(
-  subagent_type: "general-purpose",
-  prompt: "Analyze the session transcript at {TRANSCRIPT_PATH}.
 
-  Look for:
-  1. Tool usage patterns (which tools used most, any repeated patterns)
-  2. Permission approvals (same tools approved multiple times)
-  3. Friction points (retries, errors, clarifications)
-  4. Workflow patterns worth capturing as skills
-
-  Return a concise summary with specific observations.
-  See references/transcript-format.md for JSONL structure."
-)
+Scope to current project with `--project` (use the encoded cwd directory name):
+```bash
+~/.claude/skills/workflow-review/scripts/conversation_search.py ~/.claude/projects "permission denied" --project "<encoded-cwd>" --recent-days 7
 ```
 
-### Step 3: Process Results
+### Step 3: Synthesize Results
 
-The forked agent returns a clean summary. Use this to:
-- Identify specific recommendations
+Process the JSON results directly:
+- Identify specific recommendations from search hits
 - Cross-reference with CLAUDE.md configuration
 - Query claude-code-guide for relevant CC features
 
-**Benefit**: 6MB+ transcripts analyzed in isolation, only insights return to main context.
+**Benefit**: Searches across all recent sessions in seconds, stateless (no cache/index to maintain).
 
 ## Execution Modes
 
@@ -80,15 +87,9 @@ Full analysis of current session:
 3. Query claude-code-guide for relevant CC features
 4. Present recommendations one-by-one via AskUserQuestion
 
-### Periodic Nudge (via hook)
+### Previous Session Review
 
-When message counter reaches threshold, a gentle reminder appears. If user accepts:
-- Run abbreviated analysis focused on current session
-- Propose 1-3 high-value improvements
-
-### Previous Session Review (via hook)
-
-When `.claude/workflow-reviews/pending-review.md` exists at session start:
+When `~/.claude/workflow-reviews/pending-review.md` exists at session start:
 - Offer to review previous session's insights
 - Present stored recommendations for approval
 - Clean up pending file after review
@@ -203,37 +204,7 @@ Before proposing a recommendation, verify:
 - **Don't guess**: Only recommend based on observed patterns
 - **Don't overwhelm**: Max 5 recommendations per review
 - **Don't repeat**: Track what's been proposed before
-- **Don't write files**: You are read-only, user applies changes
+- **Don't modify user files**: Only write to `~/.claude/workflow-reviews/`, user applies code/config changes
 - **Don't use WebSearch**: Use claude-code-guide agent only
 
-## Example Session
-
-```
-User: /workflow-review
-
-Claude: I'll analyze this session and your CC configuration.
-
-[Reads CLAUDE.md, .claude/settings.json]
-[Queries claude-code-guide for relevant features]
-
-Claude: Found 3 recommendations.
-
-[AskUserQuestion]
-## Recommendation: Add Bash permission for git commands
-
-**Observation**: You approved `git status`, `git diff`, `git log` 12 times this session.
-**Suggestion**: Add `Bash(git:*)` to allowed tools in settings.
-**Benefit**: No more permission prompts for git commands.
-
-**To apply**: Add to ~/.claude/settings.json:
-  "permissions": { "allow": ["Bash(git:*)"] }
-
-Options: [Apply this] [Skip] [Stop review]
-
-User: Apply this
-
-Claude: Here's the exact change:
-[Shows JSON snippet to copy]
-
-Moving to next recommendation...
-```
+See `references/example-session.md` for a worked example.
