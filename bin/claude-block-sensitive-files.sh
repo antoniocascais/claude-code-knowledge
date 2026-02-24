@@ -23,6 +23,9 @@ esac
 # Skip if no file path
 [[ -z "$file_path" ]] && exit 0
 
+# Allow /tmp — no sensitive files live here, needed for temp workspaces
+[[ "$file_path" == /tmp/* ]] && exit 0
+
 # Resolve to absolute path if relative
 if [[ "$file_path" != /* ]]; then
   file_path="$CLAUDE_PROJECT_DIR/$file_path"

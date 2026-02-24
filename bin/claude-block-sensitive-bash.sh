@@ -16,6 +16,12 @@ if echo "$command" | grep -qE '(^|[;&|]\s*)rm\s'; then
   exit 2
 fi
 
+# Block cp/mv to /tmp — prevents bypassing file protections
+if echo "$command" | grep -qE '(cp|mv)\s+.*\s+/tmp'; then
+  echo "🚫 Blocked: cannot copy/move files to /tmp" >&2
+  exit 2
+fi
+
 # Block .env patterns (allow .example/.sample/.template)
 # Match: .env, .env.local, .env.production, etc.
 # Allow: .env.example, .env.sample, .env.template

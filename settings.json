@@ -118,7 +118,8 @@
   "outputStyle": "Kitty Safe",
   "promptSuggestionEnabled": false,
   "additionalDirectories": [
-    "~/Documents/claude/"
+    "~/Documents/claude/",
+    "/tmp"
   ],
   "feedbackSurveyState": {
     "lastShownTime": 1753975711695
