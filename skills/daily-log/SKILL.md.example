@@ -1,0 +1,105 @@
+---
+name: daily-log
+description: Appends a session summary to a per-project daily log. Use when ending a session, logging progress, summarizing work done, updating daily log, or when a session has substantive work worth recording. Also triggers on "what did we do today" or "log this session".
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - AskUserQuestion
+  - Bash(mkdir:*)
+argument-hint: [project-name]
+---
+
+# Daily Log
+
+Append a mid-level summary of the current session to a per-project daily log.
+
+## Paths
+
+- Task notes root: `/path/to/claude/tasks_notes/`
+- Daily log dir: `/path/to/claude/tasks_notes/<project>/daily_log/`
+- Daily log file: `/path/to/claude/tasks_notes/<project>/daily_log/YYYY-MM-DD.md`
+- Project notes: `/path/to/claude/tasks_notes/<project>/notes.md`
+
+## Workflow
+
+### Step 1: Identify Project
+
+If `$ARGUMENTS` contains a project name, use it.
+
+Otherwise, infer from conversation context:
+1. Look for project references, repo names, task context
+2. Glob `/path/to/claude/tasks_notes/*/notes.md` to list known projects
+3. Match conversation context against project names
+
+If ambiguous or no match, ask:
+```
+Which project should this log entry go to?
+[list matching projects as options]
+```
+
+### Step 2: Summarize Session
+
+Review the conversation and produce a mid-level summary.
+
+**Right level of detail** — what you'd want to read tomorrow morning to remember what happened:
+- Key actions taken and outcomes
+- Decisions made and why
+- Problems encountered and how they were resolved
+- What was left pending or unfinished
+
+**Too detailed** (avoid):
+- Every file touched or command run
+- Line-by-line change descriptions
+- Full error messages or stack traces
+
+**Too vague** (avoid):
+- "Worked on the project"
+- "Fixed some bugs"
+- "Made progress on feature X"
+
+### Step 3: Flag Promotion Candidates
+
+Mark items important enough for the project's `notes.md` with `→ notes.md`:
+- Lessons learned, gotchas, non-obvious solutions
+- Architecture decisions or pattern changes
+- Reusable knowledge (not session-specific)
+
+Not everything needs a flag — only things with lasting value.
+
+### Step 4: Write Entry
+
+1. Ensure directory exists:
+   ```
+   mkdir -p /path/to/claude/tasks_notes/<project>/daily_log/
+   ```
+
+2. Get current date (YYYY-MM-DD) and time (HH:MM)
+
+3. Format entry:
+   ```markdown
+   ## HH:MM
+
+   - Action taken and its outcome
+   - Decision made: chose X over Y because Z
+   - **→ notes.md**: Important pattern or lesson worth preserving
+   - Left pending: brief description of unfinished work
+   ```
+
+4. If `daily_log/YYYY-MM-DD.md` exists → append using Edit (add blank line before new entry)
+5. If it doesn't exist → create using Write
+
+### Step 5: Report
+
+Show the user what was logged:
+```
+Logged to <project>/daily_log/YYYY-MM-DD.md
+
+Summary:
+- [brief list of what was captured]
+- Flagged N items for notes.md promotion
+
+To promote flagged items: /note-taking promote from daily log
+```

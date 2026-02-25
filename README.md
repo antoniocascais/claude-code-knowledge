@@ -10,7 +10,8 @@ My Claude Code configs — grab what you need.
 | `git-commit` | Analyzes staged changes, proposes commit structure (single/multiple), generates messages |
 | `skill-creator` | Scaffolds new skills following official spec |
 | `pr-review` | Code review for diffs, commits, branches, PRs |
-| `note-taking` | Task notes + knowledge base management |
+| `note-taking` | Task notes + knowledge base management (includes daily log promotion) |
+| `daily-log` | Per-project daily session log — mid-level summaries with notes.md promotion flags |
 | `planner` | Task capture and organization |
 | `codemap` | Generate codebase maps with architecture diagrams (WIP - still testing) |
 | `workflow-review` | Reviews CC sessions via [BM25 cross-session search](https://eric-tramel.github.io/blog/2026-02-07-searchable-agent-memory/) and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
@@ -74,7 +75,7 @@ This processes `.example` templates, replacing paths with your config:
 **Creates:**
 - `<CONFIG_PATH>/CLAUDE.md`
 - `<CONFIG_PATH>/commands/` — review-notes, review-knowledge, context
-- `<CONFIG_PATH>/skills/` — note-taking, planner
+- `<CONFIG_PATH>/skills/` — daily-log, note-taking, planner
 - `<CONFIG_PATH>/agents/` — all agents
 
 ### 3. Create Data Directories

@@ -223,6 +223,7 @@ FILES=(
     "commands/review-notes.md"
     "commands/review-knowledge.md"
     "commands/user/context.md"
+    "skills/daily-log/SKILL.md"
     "skills/note-taking/SKILL.md"
     "skills/planner/SKILL.md"
 )

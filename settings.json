@@ -23,6 +23,8 @@
       "Bash(ctask:*)",
       "Skill(ctask)",
       "Bash(make:*)",
+      "Skill(note-taking)",
+      "Skill(daily-log)",
       "Skill(voice-mode)",
       "Bash(~/.claude/skills/voice-mode/scripts/tts.sh:*)",
       "Bash(docker ps:*)",

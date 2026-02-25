@@ -1,6 +1,6 @@
 ---
 name: note-taking
-description: Manages task notes and knowledge base entries. Use when creating/updating notes, curating knowledge, reviewing task progress, saving session progress, remembering information, writing notes, or at session end for cleanup.
+description: Manages task notes and knowledge base entries. Use when creating/updating notes, curating knowledge, reviewing task progress, saving session progress, remembering information, writing notes, promoting daily log entries, or at session end for cleanup.
 allowed-tools:
   - Read
   - Write
@@ -135,6 +135,36 @@ Target: **under 10k chars**. If over, propose trimming by:
 **Domain**: `#tools`, `#web`, `#devops`, `#databases`, `#programming`
 **Type**: `#configuration`, `#troubleshooting`, `#pattern`, `#reference`
 **Status**: `#needs_revision`, `#verified`, `#deprecated`
+
+## Daily Log Promotion
+
+When user requests promotion from daily log (e.g., "promote from daily log"):
+
+### Step 1: Read Daily Log
+
+1. Glob `/path/to/claude/tasks_notes/<project>/daily_log/*.md` to find log files
+2. Read the most recent file (or the one specified by user)
+3. Identify entries marked with `→ notes.md`
+
+### Step 2: Propose Promotion
+
+Show flagged items and propose where they fit in notes.md:
+```
+Flagged items from daily_log/2026-02-25.md:
+
+1. "ArgoCD CRD ordering matters for sync waves"
+   → ADD to "Lessons Learned" section
+
+2. "Helm values override pattern for multi-env"
+   → ADD to "Technical Stack" section
+```
+
+### Step 3: Approve & Apply
+
+Follow the standard Step 3 (Ask) and Step 4 (Execute) workflow above.
+
+After promotion, optionally remove the `→ notes.md` markers from the daily log entries
+(replace `**→ notes.md**:` with `**✓ promoted**:`).
 
 ## Templates
 
