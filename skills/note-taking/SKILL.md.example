@@ -10,6 +10,11 @@ allowed-tools:
   - AskUserQuestion
   - Bash(git diff:*)
 context: fork
+hooks:
+  UserPromptSubmit:
+    - hooks:
+        - type: command
+          command: "$HOME/.claude/skills/note-taking/scripts/scan-daily-logs.sh"
 ---
 
 # Note-Taking Skill
@@ -24,6 +29,8 @@ Execute these steps in order, with ONE user interaction point.
 
 1. Read existing notes (if any)
 2. Calculate file size in characters
+3. Review the daily log scan results injected by the UserPromptSubmit hook
+4. If flagged items exist, read those daily log files and extract entries marked with `**→ notes.md**:`
 
 ### Step 2: Analyze & Propose
 
@@ -138,17 +145,17 @@ Target: **under 10k chars**. If over, propose trimming by:
 
 ## Daily Log Promotion
 
-When user requests promotion from daily log (e.g., "promote from daily log"):
+Automatically triggered by the `UserPromptSubmit` hook scan results. When the hook reports
+files with flagged items (`SCAN:` lines with count > 0), process them as part of the proposal.
 
-### Step 1: Read Daily Log
+### Step 1: Read Flagged Files
 
-1. Glob `/path/to/claude/tasks_notes/<project>/daily_log/*.md` to find log files
-2. Read the most recent file (or the one specified by user)
-3. Identify entries marked with `→ notes.md`
+Read each daily log file listed as `SCAN:` with flagged items > 0.
+Extract entries marked with `**→ notes.md**:`.
 
 ### Step 2: Propose Promotion
 
-Show flagged items and propose where they fit in notes.md:
+Include flagged items in the Step 2 (Analyze & Propose) output, showing where they fit in notes.md:
 ```
 Flagged items from daily_log/2026-02-25.md:
 
@@ -163,8 +170,9 @@ Flagged items from daily_log/2026-02-25.md:
 
 Follow the standard Step 3 (Ask) and Step 4 (Execute) workflow above.
 
-After promotion, optionally remove the `→ notes.md` markers from the daily log entries
-(replace `**→ notes.md**:` with `**✓ promoted**:`).
+After promotion:
+1. Replace `**→ notes.md**:` with `**✓ promoted**:` in the daily log entry
+2. Append `<!-- notes-processed: YYYY-MM-DDTHH:MM -->` at end of the daily log file
 
 ## Templates
 

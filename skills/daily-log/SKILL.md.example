@@ -62,7 +62,18 @@ Review the conversation and produce a mid-level summary.
 
 ### Step 3: Flag Promotion Candidates
 
-Mark items important enough for the project's `notes.md` with `→ notes.md`:
+Mark items important enough for the project's `notes.md` using **exactly** `**→ notes.md**:` (bold, arrow, colon).
+This exact format is required. Note-taking auto-detects this pattern via grep. Deviating breaks the pipeline.
+
+**Correct:**
+- `**→ notes.md**: ArgoCD CRD ordering matters for sync waves`
+
+**Incorrect:**
+- `→ notes.md: ...` (not bold)
+- `**→ notes.md** ...` (missing colon after closing bold)
+- `Promote to notes: ...` (free-text, not grep-able)
+
+Flag candidates:
 - Lessons learned, gotchas, non-obvious solutions
 - Architecture decisions or pattern changes
 - Reusable knowledge (not session-specific)
@@ -84,7 +95,7 @@ Not everything needs a flag — only things with lasting value.
 
    - Action taken and its outcome
    - Decision made: chose X over Y because Z
-   - **→ notes.md**: Important pattern or lesson worth preserving
+   - **→ notes.md**: Important pattern or lesson worth preserving (exact bold format required)
    - Left pending: brief description of unfinished work
    ```
 
@@ -101,5 +112,5 @@ Summary:
 - [brief list of what was captured]
 - Flagged N items for notes.md promotion
 
-To promote flagged items: /note-taking promote from daily log
+Flagged items are auto-detected by /note-taking.
 ```

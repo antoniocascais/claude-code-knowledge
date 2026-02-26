@@ -225,6 +225,7 @@ FILES=(
     "commands/user/context.md"
     "skills/daily-log/SKILL.md"
     "skills/note-taking/SKILL.md"
+    "skills/note-taking/scripts/scan-daily-logs.sh"
     "skills/planner/SKILL.md"
 )
 
@@ -253,6 +254,9 @@ for file in "${FILES[@]}"; do
 
     echo "✓ Created $target_file"
 done
+
+# Make hook scripts executable
+chmod +x "${CONFIG_PATH}/skills/note-taking/scripts/scan-daily-logs.sh" 2>/dev/null || true
 
 AGENTS_SOURCE_DIR="agents"
 AGENTS_TARGET_DIR="${CONFIG_PATH}/agents"

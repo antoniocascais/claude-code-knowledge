@@ -5,6 +5,7 @@ commands/review-knowledge.md
 commands/user/context.md
 skills/daily-log/SKILL.md
 skills/note-taking/SKILL.md
+skills/note-taking/scripts/scan-daily-logs.sh
 skills/planner/SKILL.md
 
 # Generation script (personal use only)

@@ -1,0 +1,57 @@
+#!/bin/bash
+# scan-daily-logs.sh — UserPromptSubmit hook for note-taking skill
+# Scans daily_log dirs for unprocessed files with promotion markers.
+# Output injected as context when /note-taking is invoked.
+
+# Consume stdin (hook sends JSON we don't need)
+cat > /dev/null
+
+TASKS_NOTES="/path/to/claude/tasks_notes"
+TODAY=$(date +%Y-%m-%d)
+
+[[ -d "$TASKS_NOTES" ]] || exit 0
+
+lines=()
+has_scannable=false
+
+for project_dir in "$TASKS_NOTES"/*/daily_log; do
+    [[ -d "$project_dir" ]] || continue
+
+    project=$(basename "$(dirname "$project_dir")")
+    project_lines=()
+
+    for log_file in "$project_dir"/*.md; do
+        [[ -f "$log_file" ]] || continue
+        filename=$(basename "$log_file" .md)
+
+        if [[ "$filename" == "$TODAY" ]]; then
+            # Today's file: always include regardless of processed marker
+            count=$(grep -c '\*\*→ notes\.md\*\*:' "$log_file" || true)
+            word=$( (( count == 1 )) && echo "item" || echo "items")
+            project_lines+=("  SCAN: $log_file ($count flagged $word) [today]")
+            has_scannable=true
+        elif grep -q '<!-- notes-processed:' "$log_file"; then
+            # Already processed — skip silently
+            continue
+        else
+            # Unprocessed past file: include
+            count=$(grep -c '\*\*→ notes\.md\*\*:' "$log_file" || true)
+            word=$( (( count == 1 )) && echo "item" || echo "items")
+            project_lines+=("  SCAN: $log_file ($count flagged $word)")
+            has_scannable=true
+        fi
+    done
+
+    if [[ ${#project_lines[@]} -gt 0 ]]; then
+        lines+=("$project:")
+        lines+=("${project_lines[@]}")
+    fi
+done
+
+if $has_scannable; then
+    echo "=== Daily log promotion scan ==="
+    printf '%s\n' "${lines[@]}"
+    echo "==="
+fi
+
+exit 0

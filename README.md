@@ -78,6 +78,8 @@ This processes `.example` templates, replacing paths with your config:
 - `<CONFIG_PATH>/skills/` — daily-log, note-taking, planner
 - `<CONFIG_PATH>/agents/` — all agents
 
+**Note:** The note-taking skill's `UserPromptSubmit` hook hardcodes `$HOME/.claude/` as the script path. If using a custom `--config-path`, update the hook command in `<CONFIG_PATH>/skills/note-taking/SKILL.md` manually.
+
 ### 3. Create Data Directories
 
 ```bash
