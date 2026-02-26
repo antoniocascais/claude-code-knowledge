@@ -8,8 +8,7 @@ allowed-tools:
   - Glob
   - Grep
   - AskUserQuestion
-  - Bash(git diff:*)
-context: fork
+context: inherit
 hooks:
   UserPromptSubmit:
     - hooks:
@@ -82,35 +81,7 @@ For task notes, only ask the first question.
 
 If user approved:
 1. Write the changes
-2. Run `git diff <file>` to capture changes
-3. Create log file (see Logging section)
-4. Report log path to user
-
-### Step 5: Log & Report
-
-Create log at `/tmp/note-taking-<timestamp>.log`:
-
-```
-=== Note-Taking Log ===
-Timestamp: 2026-01-20T14:32:15
-Task: <task-name>
-File: <file-path>
-
-Initial size: 13.6k chars
-Final size: 8.2k chars
-
-User decisions:
-- Apply: Yes
-- Commit: No
-
-Changes (git diff):
-<output of git diff>
-```
-
-**Return to main conversation:**
-```
-Notes updated. Log: /tmp/note-taking-20260120-143215.log
-```
+2. Report summary: file path, initial/final size, changes applied
 
 ---
 
