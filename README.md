@@ -8,7 +8,7 @@ My Claude Code configs — grab what you need.
 | Skill | Description |
 |-------|-------------|
 | `git-commit` | Analyzes staged changes, proposes commit structure (single/multiple), generates messages |
-| `skill-creator` | Scaffolds new skills following official spec |
+| `skill-forge` | Scaffolds new skills following official spec |
 | `pr-review` | Code review for diffs, commits, branches, PRs |
 | `note-taking` | Task notes + knowledge base management (includes daily log promotion) |
 | `daily-log` | Per-project daily session log — mid-level summaries with notes.md promotion flags |

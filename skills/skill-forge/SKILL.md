@@ -1,5 +1,5 @@
 ---
-name: skill-creator
+name: skill-forge
 description: Creates new Claude Code skills with proper structure and best practices. Use when user wants to create a skill, update an existing skill, add a new command, scaffold a workflow, define skill hooks, or asks "how do I make a skill".
 allowed-tools: Read Write Edit Glob Grep AskUserQuestion
 argument-hint: [use-case-description]
