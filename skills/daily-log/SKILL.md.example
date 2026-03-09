@@ -25,6 +25,13 @@ Append a mid-level summary of the current session to a per-project daily log.
 
 ## Workflow
 
+### Step 0: Resolve Notes Path
+
+Before searching for the daily log folder, look at what's already in your conversation context — your MEMORY.md content and CLAUDE.md are both loaded into every session. Check them for a stated notes/task-notes path for this project.
+
+- If found: say "Found notes path in memory: `<path>`" and use it as the task notes root.
+- If not found: explicitly say "No notes path found in memory or CLAUDE.md — searching tasks_notes/" and fall back to the default task notes root.
+
 ### Step 1: Identify Project
 
 If `$ARGUMENTS` contains a project name, use it.
