@@ -6,7 +6,7 @@
 # Consume stdin (hook sends JSON we don't need)
 cat > /dev/null
 
-TASKS_NOTES="/path/to/claude/tasks_notes"
+TASKS_NOTES="${TASKS_NOTES:-/path/to/claude/tasks_notes}"
 TODAY=$(date +%Y-%m-%d)
 
 [[ -d "$TASKS_NOTES" ]] || exit 0
@@ -14,10 +14,10 @@ TODAY=$(date +%Y-%m-%d)
 lines=()
 has_scannable=false
 
-for project_dir in "$TASKS_NOTES"/*/daily_log; do
-    [[ -d "$project_dir" ]] || continue
-
-    project=$(basename "$(dirname "$project_dir")")
+while IFS= read -r -d '' project_dir; do
+    # Build project name from path relative to TASKS_NOTES
+    project="${project_dir#$TASKS_NOTES/}"
+    project="${project%/daily_log}"
     project_lines=()
 
     for log_file in "$project_dir"/*.md; do
@@ -46,7 +46,7 @@ for project_dir in "$TASKS_NOTES"/*/daily_log; do
         lines+=("$project:")
         lines+=("${project_lines[@]}")
     fi
-done
+done < <(find "$TASKS_NOTES" -type d -name daily_log -print0 | sort -z)
 
 if $has_scannable; then
     echo "=== Daily log promotion scan ==="
