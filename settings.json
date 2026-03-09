@@ -56,7 +56,6 @@
       "Bash(npx vitest:*)"
     ]
   },
-  "model": "opus",
   "hooks": {
     "SessionStart": [
       {
@@ -104,6 +103,10 @@
           {
             "type": "command",
             "command": "~/Documents/ai/bin/claude-validate-build.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-block-absolute-paths.sh"
           }
         ]
       },
@@ -144,5 +147,6 @@
   ],
   "feedbackSurveyState": {
     "lastShownTime": 1753975711695
-  }
+  },
+  "effortLevel": "high"
 }
