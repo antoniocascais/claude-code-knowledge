@@ -25,12 +25,17 @@ def strip_ansi(text: str) -> str:
     return ANSI_ESCAPE_RE.sub("", text).replace("\r", "")
 
 
+def is_dialog_dismissed(line: str) -> bool:
+    """Check for 'Status dialog dismissed' with garbled spacing from ANSI stripping."""
+    return "dialogdismissed" in line.replace(" ", "").lower()
+
+
 def extract_usage_section(clean_text: str):
     """Extract the Usage tab content from cleaned Claude output."""
     lines = [line.rstrip() for line in clean_text.splitlines()]
 
     candidates = [idx for idx, line in enumerate(lines)
-                  if "Settings:" in line and "Usage" in line]
+                  if "Usage" in line and ("Settings:" in line or "Config" in line)]
     if candidates:
         # Prefer the last occurrence to capture the fully rendered dialog
         start_idx = candidates[-1]
@@ -50,7 +55,7 @@ def extract_usage_section(clean_text: str):
                 break
             if current.startswith("Pressing Escape") or current.startswith("Sending /exit"):
                 break
-            if current.startswith("Status dialog dismissed"):
+            if is_dialog_dismissed(current):
                 break
             end_idx += 1
 
@@ -70,32 +75,61 @@ def extract_usage_section(clean_text: str):
             if "Session:" in line and "Week:" in line
         ]
 
-    if not status_candidates:
-        return None
+    if status_candidates:
+        start_idx = status_candidates[-1]
+        end_idx = start_idx + 1
+        collected = [lines[start_idx].rstrip()]
+        terminal_prefixes = (">", "-- INSERT --", "/exit", "Pressing", "Sending", "Try \"", "Usage details saved")
 
-    start_idx = status_candidates[-1]
-    end_idx = start_idx + 1
-    collected = [lines[start_idx].rstrip()]
-    terminal_prefixes = (">", "-- INSERT --", "/exit", "Pressing", "Sending", "Try \"", "Usage details saved")
-
-    while end_idx < len(lines):
-        current_line = lines[end_idx]
-        stripped = current_line.strip()
-        if not stripped:
+        while end_idx < len(lines):
+            current_line = lines[end_idx]
+            stripped = current_line.strip()
+            if not stripped:
+                collected.append(current_line.rstrip())
+                end_idx += 1
+                continue
+            if stripped.startswith(terminal_prefixes):
+                break
+            if "Thinking on" in stripped:
+                break
+            if is_dialog_dismissed(stripped):
+                break
             collected.append(current_line.rstrip())
             end_idx += 1
-            continue
-        if stripped.startswith(terminal_prefixes):
-            break
-        if "Thinking on" in stripped:
-            break
-        if stripped.startswith("Status dialog dismissed"):
-            break
-        collected.append(current_line.rstrip())
-        end_idx += 1
 
-    usage_block = "\n".join(line.rstrip() for line in collected).strip()
-    return usage_block or None
+        usage_block = "\n".join(line.rstrip() for line in collected).strip()
+        if usage_block:
+            return usage_block
+
+    # Strategy 3: Direct "Current session" detection (handles TUI format changes)
+    session_candidates = [
+        idx for idx, line in enumerate(lines)
+        if re.search(r"Current\s*session", line, re.IGNORECASE)
+    ]
+    if session_candidates:
+        start_idx = session_candidates[-1]
+        end_idx = start_idx
+        collected = []
+        usage_pattern = re.compile(r"(Current|Extra|%\s*used|Resets)", re.IGNORECASE)
+        while end_idx < len(lines):
+            stripped = lines[end_idx].strip()
+            if not stripped:
+                end_idx += 1
+                continue
+            if is_dialog_dismissed(stripped):
+                break
+            if stripped.startswith(("❯", ">", "-- INSERT --", "/exit", "Pressing", "Sending", "Try \"", "Usage details saved")):
+                break
+            if end_idx == start_idx or usage_pattern.search(stripped):
+                collected.append(lines[end_idx].rstrip())
+            else:
+                break
+            end_idx += 1
+        if collected:
+            return "\n".join(collected).strip()
+
+    return None
+
 
 def capture_slash_command(command="/usage", timeout=30, debug=False, wait_time=5, silent=False):
     """

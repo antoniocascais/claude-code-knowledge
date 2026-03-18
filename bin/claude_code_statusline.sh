@@ -336,12 +336,21 @@ parse_week_reset() {
         return
     fi
 
-    local reset_line
-    reset_line=$(grep -A 2 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | grep -i "resets" | head -1)
+    local week_data
+    week_data=$(grep -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | head -1)
     local reset_info=""
 
-    if [[ -n "$reset_line" ]]; then
-        reset_info=$(normalize_reset_string "$reset_line")
+    if [[ -n "$week_data" ]]; then
+        # Extract text after "Resets" (handles inline format where everything is on one line)
+        local after_resets
+        after_resets=$(echo "$week_data" | sed -n 's/.*[Rr]eset[s]\{0,1\} *//p')
+        if [[ -n "$after_resets" ]]; then
+            # Strip timezone in parentheses
+            after_resets=$(echo "$after_resets" | sed 's/ *(.*$//')
+            # Re-insert spaces lost by ANSI stripping: "Mar20,12pm" → "Mar 20, 12pm"
+            after_resets=$(echo "$after_resets" | sed 's/\([A-Za-z]\)\([0-9]\)/\1 \2/g; s/,\([^ ]\)/, \1/g')
+            reset_info="$after_resets"
+        fi
     fi
 
     if [[ -z "$reset_info" ]]; then
@@ -533,19 +542,96 @@ formatted_ctx_usage=$(format_ctx_usage)
 formatted_dir=$(format_directory "$workspace_current_dir" "$workspace_project_dir")
 formatted_usage=$(format_usage_display)
 
-# Format and display the status line with two lines
-# Line 1: Model, cost, dir, branch, lines, duration
-line1="\e[38;5;240m┌─\e[0m $formatted_model $formatted_cost \e[38;5;240m│\e[0m $formatted_dir"
-if [[ -n "$git_branch" ]]; then
-    line1+=" \e[38;5;240m│\e[0m \e[38;5;208m$git_branch\e[0m"
+# Get terminal width for adaptive layout
+# Prefer tmux pane width (accurate in splits) over tput cols (may return full terminal width)
+if [[ -n "$TMUX" ]]; then
+    term_width=$(tmux display-message -p '#{pane_width}' 2>/dev/null || tput cols 2>/dev/null || echo 120)
+else
+    term_width=$(tput cols 2>/dev/null || echo 120)
 fi
-if [[ -n "$formatted_lines" ]]; then
-    line1+=" \e[38;5;240m│\e[0m $formatted_lines"
-fi
-line1+=" \e[38;5;240m│\e[0m \e[38;5;246m$formatted_session_duration\e[0m"
+# Small margin for Claude Code's built-in borders/padding only
+# (right-side indicators handled by greedy builder stopping before overflow)
+(( term_width = term_width > 16 ? term_width - 10 : term_width ))
 
-# Line 2: Context, usage
-line2="\e[38;5;240m└─\e[0m $formatted_ctx_usage"
+# Calculate visible character count (strip ANSI escape sequences)
+component_width() {
+    local stripped
+    stripped=$(echo -ne "$1" | sed 's/\x1b\[[0-9;]*m//g')
+    echo ${#stripped}
+}
+
+sep=" \e[38;5;240m│\e[0m "
+SEP_W=3  # visible width of " │ "
+PREFIX="\e[38;5;240m┌─\e[0m "
+PREFIX_W=3  # visible width of "┌─ "
+
+# Pre-compute visible widths of each component (one subshell each)
+comp_model="$formatted_model $formatted_cost"
+comp_ctx="$formatted_ctx_usage"
+comp_duration="\e[38;5;246m$formatted_session_duration\e[0m"
+comp_lines="$formatted_lines"
+comp_dir="$formatted_dir"
+
+w_model=$(component_width "$comp_model")
+w_ctx=$(component_width "$comp_ctx")
+w_duration=$(component_width "$comp_duration")
+w_dir=$(component_width "$comp_dir")
+
+# Only compute branch width if in a git repo
+if [[ -n "$git_branch" ]]; then
+    comp_branch="\e[38;5;208m$git_branch\e[0m"
+    w_branch=$(component_width "$comp_branch")
+else
+    comp_branch=""
+    w_branch=0
+fi
+
+# Only compute lines width if there are changes
+if [[ -n "$formatted_lines" ]]; then
+    w_lines=$(component_width "$comp_lines")
+else
+    w_lines=0
+fi
+
+# Greedy line 1 builder: add components in priority order, stop when next won't fit
+# Priority: model+cost, ctx, branch, duration, lines, directory
+line1="$PREFIX$comp_model"
+running_w=$(( PREFIX_W + w_model ))
+
+# Try adding a component if it fits
+try_add() {
+    local comp="$1" w="$2"
+    [[ -z "$comp" || "$w" -eq 0 ]] && return 1
+    if (( running_w + SEP_W + w <= term_width )); then
+        line1+="${sep}${comp}"
+        (( running_w += SEP_W + w ))
+        return 0
+    fi
+    return 1
+}
+
+try_add "$comp_ctx"      "$w_ctx"
+try_add "$comp_branch"   "$w_branch"
+try_add "$comp_duration" "$w_duration"
+try_add "$comp_lines"    "$w_lines"
+try_add "$comp_dir"      "$w_dir"
+
+# If model+cost alone overflows, fall back to short model name
+# (skips lines/dir — lowest priority components)
+if (( running_w > term_width )); then
+    local short_model_name comp_model_short w_model_short
+    short_model_name=$(echo "$model_name" | sed 's/ ([^)]*context)//')
+    comp_model_short="$(format_model "$short_model_name") $formatted_cost"
+    w_model_short=$(component_width "$comp_model_short")
+    line1="$PREFIX$comp_model_short"
+    running_w=$(( PREFIX_W + w_model_short ))
+    try_add "$comp_ctx"      "$w_ctx"
+    try_add "$comp_branch"   "$w_branch"
+    try_add "$comp_duration" "$w_duration"
+fi
+
+# Line 2: Session/week usage (supplementary — survives if line 1 fits)
+line2="\e[38;5;240m└─\e[0m"
 line2+="$token_warning$formatted_usage \e[38;5;240m─┘\e[0m"
 
 echo -e "$line1"
