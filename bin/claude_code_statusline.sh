@@ -239,31 +239,6 @@ get_usage_error() {
     fi
 }
 
-# Parse usage log for session percentage
-parse_session_usage() {
-    if [[ ! -f "$USAGE_LOG" ]]; then
-        echo ""
-        return
-    fi
-
-    local percentage=""
-    local session_line
-    session_line=$(grep -m 1 "Current session" "$USAGE_LOG")
-
-    if [[ -n "$session_line" ]]; then
-        # Extract from same line: "9%used" or "9% used"
-        percentage=$(echo "$session_line" | grep -oE '[0-9]+%' | head -1 | tr -d '%')
-    fi
-
-    # Fallback: check next line
-    if [[ -z "$percentage" ]]; then
-        session_line=$(grep -A 1 "Current session" "$USAGE_LOG" | tail -1)
-        percentage=$(echo "$session_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
-    fi
-
-    echo "${percentage:-0}"
-}
-
 # Normalize reset time string (fix spaces stripped by ANSI removal)
 # "ResetsFeb12,12pm(Europe/Berlin)" -> "Feb 12, 12pm"
 normalize_reset_string() {
@@ -275,21 +250,46 @@ normalize_reset_string() {
     echo "$raw"
 }
 
-# Parse usage log for session reset time
-parse_session_reset() {
-    if [[ ! -f "$USAGE_LOG" ]]; then
-        echo ""
-        return
+# Extract the session section from the usage log.
+# All TUI sections may be concatenated on one line — this isolates the session
+# portion (from "Current session" to just before "Current week").
+extract_session_section() {
+    if [[ ! -f "$USAGE_LOG" ]]; then return; fi
+    grep -m 1 "Current session" "$USAGE_LOG" | \
+        sed -E 's/[Cc]urrent ?[Ww]eek.*//'
+}
+
+# Extract the week (all models) section from the usage log.
+# Strips everything before "Current week (all models)" and after the next section.
+extract_week_section() {
+    if [[ ! -f "$USAGE_LOG" ]]; then return; fi
+    grep -m 1 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | \
+        sed -E 's/.*[Cc]urrent ?[Ww]eek ?\(?[Aa]ll ?[Mm]odels\)?//' | \
+        sed -E 's/[Cc]urrent ?[Ww]eek ?\(?[Ss]onnet.*//' | \
+        sed -E 's/[Ee]xtra ?[Uu]sage.*//'
+}
+
+# Parse usage log for session percentage
+parse_session_usage() {
+    local section
+    section=$(extract_session_section)
+
+    local percentage=""
+    if [[ -n "$section" ]]; then
+        percentage=$(echo "$section" | grep -oE '[0-9]+%' | head -1 | tr -d '%')
     fi
 
-    local session_line
-    session_line=$(grep -m 1 "Current session" "$USAGE_LOG")
+    echo "${percentage:-0}"
+}
 
-    if [[ -n "$session_line" ]]; then
-        # "Resets" text is often garbled by ANSI stripping ("Reses", "Reset", etc.)
-        # Extract the time pattern directly — session resets show just a time like "3pm" or "2:59pm"
+# Parse usage log for session reset time
+parse_session_reset() {
+    local section
+    section=$(extract_session_section)
+
+    if [[ -n "$section" ]]; then
         local reset_time
-        reset_time=$(echo "$session_line" | sed 's/.*%used//' | grep -oE '[0-9]+:?[0-9]*[ap]m' | head -1)
+        reset_time=$(echo "$section" | grep -oE '[0-9]+:?[0-9]*[ap]m' | head -1)
         if [[ -n "$reset_time" ]]; then
             echo "$reset_time"
             return
@@ -297,29 +297,27 @@ parse_session_reset() {
     fi
 
     # Fallback: check for "Resets" on next lines
-    local reset_line
-    reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep -i "Reset" | head -1)
-    if [[ -n "$reset_line" ]]; then
-        normalize_reset_string "$reset_line"
+    if [[ -f "$USAGE_LOG" ]]; then
+        local reset_line
+        reset_line=$(grep -A 2 "Current session" "$USAGE_LOG" | grep -i "Reset" | head -1)
+        if [[ -n "$reset_line" ]]; then
+            normalize_reset_string "$reset_line"
+        fi
     fi
 }
 
 # Parse usage log for week percentage
 parse_week_usage() {
-    if [[ ! -f "$USAGE_LOG" ]]; then
-        echo ""
-        return
-    fi
-
-    local week_line
-    week_line=$(grep -A 1 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | tail -1)
+    local section
+    section=$(extract_week_section)
 
     local percentage=""
-    if [[ -n "$week_line" ]]; then
-        percentage=$(echo "$week_line" | grep -o '[0-9]\+%' | head -1 | tr -d '%')
+    if [[ -n "$section" ]]; then
+        percentage=$(echo "$section" | grep -oE '[0-9]+%' | head -1 | tr -d '%')
     fi
 
-    if [[ -z "$percentage" ]]; then
+    if [[ -z "$percentage" && -f "$USAGE_LOG" ]]; then
+        local week_line
         week_line=$(grep -m 1 "Week:" "$USAGE_LOG")
         if [[ -n "$week_line" ]]; then
             percentage=$(echo "$week_line" | sed -n 's/.*Week:[^0-9]*\([0-9][0-9]*\)%.*/\1/p')
@@ -331,29 +329,19 @@ parse_week_usage() {
 
 # Parse usage log for week reset time
 parse_week_reset() {
-    if [[ ! -f "$USAGE_LOG" ]]; then
-        echo ""
-        return
-    fi
-
-    local week_data
-    week_data=$(grep -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | head -1)
+    local section
+    section=$(extract_week_section)
     local reset_info=""
 
-    if [[ -n "$week_data" ]]; then
-        # Extract text after "Resets" (handles inline format where everything is on one line)
+    if [[ -n "$section" ]]; then
         local after_resets
-        after_resets=$(echo "$week_data" | sed -n 's/.*[Rr]eset[s]\{0,1\} *//p')
+        after_resets=$(echo "$section" | sed -n 's/.*[Rr]eset[s]\{0,1\} *//p')
         if [[ -n "$after_resets" ]]; then
-            # Strip timezone in parentheses
-            after_resets=$(echo "$after_resets" | sed 's/ *(.*$//')
-            # Re-insert spaces lost by ANSI stripping: "Mar20,12pm" → "Mar 20, 12pm"
-            after_resets=$(echo "$after_resets" | sed 's/\([A-Za-z]\)\([0-9]\)/\1 \2/g; s/,\([^ ]\)/, \1/g')
-            reset_info="$after_resets"
+            reset_info=$(normalize_reset_string "$after_resets")
         fi
     fi
 
-    if [[ -z "$reset_info" ]]; then
+    if [[ -z "$reset_info" && -f "$USAGE_LOG" ]]; then
         local week_line
         week_line=$(grep -m 1 "Week:" "$USAGE_LOG")
 
