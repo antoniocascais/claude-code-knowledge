@@ -20,6 +20,7 @@ My Claude Code configs — grab what you need.
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `c7` | Fetches up-to-date library docs from Context7, saves to /tmp/context7/ |
 | `voice-mode` | TTS transport layer using [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) — speaks all responses, composable with other skills |
+| `clarice` | Mock interview coach — runs realistic sessions (behavioral, technical, system design, challenge walkthrough) with weighted scoring, critical-miss detection, and detailed gap reports |
 
 ### Commands
 | Command | Description |
@@ -166,6 +167,21 @@ cd pocket-tts && docker compose up -d
 **Available voices:** alba, marius, javert, jean, fantine, cosette, eponine, azelma
 
 **Requirements:** Docker, mpv, curl
+
+### clarice (Mock Interview Prep)
+
+Simulates realistic mock interviews tailored to your CV and target role. Supports behavioral, technical, system design, and challenge walkthrough formats. Generates a scored report with gap analysis and actionable prep advice.
+
+**Invocation:** `/clarice`
+
+**Usage:** Place files in the working directory before invoking:
+- **CV/Resume** (required): filename starting with `cv` or `resume` (e.g., `cv.pdf`, `resume-2026.md`)
+- **Job Description** (required): filename starting with `jd` or `job` (e.g., `jd.md`, `job-senior-sre.txt`)
+- **Context** (optional): `*context*.md` — company notes, interview stage, focus areas, known gaps
+
+Supported formats: `.md`, `.txt`, `.pdf`, `.docx`
+
+**Output:** Two files per session — `clarice-{SESSION_ID}-context.md` (confirmed interview context) and `clarice-{SESSION_ID}-report.md` (scored assessment with strengths, concerns, and prep checklist). Tracks progress across sessions.
 
 ### workflow-review
 
