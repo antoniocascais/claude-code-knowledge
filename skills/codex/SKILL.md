@@ -1,14 +1,7 @@
 ---
 name: codex
 description: AI peer review via OpenAI Codex CLI. Use when reviewing code changes, validating technical decisions, comparing implementation approaches, or getting a second opinion on architecture choices. Triggers on /codex, /codex-review, or auto-triggers when presenting significant alternatives to user.
-allowed-tools:
-  - Bash(codex exec:*)
-  - Read
-  - Glob
-  - Grep
-  - Bash(git status:*)
-  - Bash(git diff:*)
-  - Bash(git log:*)
+allowed-tools: "Bash(codex exec:*), Read, Glob, Grep, Bash(git status:*), Bash(git diff:*), Bash(git log:*)"
 user-invocable: true
 ---
 

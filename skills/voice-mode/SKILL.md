@@ -1,12 +1,7 @@
 ---
 name: voice-mode
-description: >-
-  Activates voice conversation mode using Pocket TTS Docker container.
-  Use when user says "voice mode", "let's talk", "talk to me",
-  "speak your responses", or wants Claude to respond with spoken audio.
-  Speaks all responses through TTS and plays via speakers.
-allowed-tools:
-  - Bash(*/tts.sh:*)
+description: "Activates voice conversation mode using Pocket TTS Docker container. Use when user says 'voice mode', 'let''s talk', 'talk to me', 'speak your responses', or wants Claude to respond with spoken audio. Speaks all responses through TTS and plays via speakers."
+allowed-tools: "Bash(*/tts.sh:*)"
 argument-hint: "[voice]"
 ---
 

@@ -2,8 +2,7 @@
 name: ctask
 description: Manages tasks using the ctask CLI wrapper over a local SQLite database. Use when tracking work items, creating tasks, managing dependencies, adding comments, labeling, or reviewing task status. Triggers on task tracking, ticket management, work planning, backlog management.
 user-invocable: false
-allowed-tools:
-  - Bash(ctask:*)
+allowed-tools: "Bash(ctask:*)"
 ---
 
 # ctask — Local Task Tracker

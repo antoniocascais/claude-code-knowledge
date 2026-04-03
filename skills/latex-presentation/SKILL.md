@@ -2,12 +2,7 @@
 name: latex-presentation
 description: Creates impressive LaTeX Beamer presentations with modern design. Generates .tex files with theme selection, font pairing, TikZ diagrams, overlays, and best practices. Use for LaTeX slides, Beamer presentations, scaffolding decks, slide design advice, or TikZ diagram generation.
 disable-model-invocation: true
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
+allowed-tools: "Read, Write, Edit, Glob, Grep"
 ---
 
 # LaTeX Presentation Skill
