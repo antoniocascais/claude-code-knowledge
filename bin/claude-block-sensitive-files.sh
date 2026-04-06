@@ -43,7 +43,10 @@ if [[ "$basename_file" == .env || "$basename_file" == .env.* ]]; then
   fi
 fi
 
-# 2. Block files in .gitignore (only if in a git repo)
+# 2. Allow .claude/ config directory even if gitignored
+[[ "$file_path" == */.claude/* ]] && exit 0
+
+# 3. Block files in .gitignore (only if in a git repo)
 if git -C "$CLAUDE_PROJECT_DIR" rev-parse --git-dir &>/dev/null; then
   if git -C "$CLAUDE_PROJECT_DIR" check-ignore -q "$file_path" 2>/dev/null; then
     echo "🚫 Access denied: '$file_path' is in .gitignore" >&2
