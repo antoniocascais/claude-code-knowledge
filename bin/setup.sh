@@ -158,6 +158,10 @@ setup_symlinks() {
     create_link "$CONFIG_PATH/commands" "$target_dir/commands"
     create_link "$CONFIG_PATH/agents" "$target_dir/agents"
     create_link "$CONFIG_PATH/skills" "$target_dir/skills"
+    create_link "$CONFIG_PATH/output-styles" "$target_dir/output-styles"
+    create_link "$CONFIG_PATH/settings.json" "$target_dir/settings.json"
+    create_link "$CONFIG_PATH/bin/claude_code_statusline.sh" "$target_dir/statusline.sh"
+    create_link "$CONFIG_PATH/bin/claude_code_capture_usage.py" "$target_dir/claude_code_capture_usage.py"
 
     echo ""
     echo "Symlink setup complete!"
