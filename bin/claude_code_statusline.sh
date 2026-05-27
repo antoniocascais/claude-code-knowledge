@@ -261,9 +261,12 @@ extract_session_section() {
 
 # Extract the week (all models) section from the usage log.
 # Strips everything before "Current week (all models)" and after the next section.
+# Newer TUI splits the header, bar/percentage, and reset across separate lines,
+# so pull a few trailing lines and squash to one before the section trims.
 extract_week_section() {
     if [[ ! -f "$USAGE_LOG" ]]; then return; fi
-    grep -m 1 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | \
+    grep -m 1 -A 3 -Ei "current ?week ?\(?all ?models\)?" "$USAGE_LOG" | \
+        tr '\n' ' ' | \
         sed -E 's/.*[Cc]urrent ?[Ww]eek ?\(?[Aa]ll ?[Mm]odels\)?//' | \
         sed -E 's/[Cc]urrent ?[Ww]eek ?\(?[Ss]onnet.*//' | \
         sed -E 's/[Ee]xtra ?[Uu]sage.*//'
