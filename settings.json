@@ -3,7 +3,8 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "CLAUDE_CODE_EFFORT_LEVEL": "xhigh"
   },
   "attribution": {
     "commit": "",
