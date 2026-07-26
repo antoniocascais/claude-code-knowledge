@@ -108,11 +108,11 @@
     ],
     "PreCompact": [
       {
-        "matcher": "auto",
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/ai/bin/claude-precompact-checkpoint.sh"
+            "command": "~/Documents/ai/bin/claude-precompact-checkpoint.sh",
+            "timeout": 10
           }
         ]
       },
@@ -121,7 +121,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/ai/bin/claude-precompact-daily-log-guard.sh"
+            "command": "~/Documents/ai/bin/claude-precompact-daily-log-guard.sh",
+            "timeout": 10
           }
         ]
       }
@@ -132,7 +133,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/ai/bin/claude-mark-daily-log.sh"
+            "command": "~/Documents/ai/bin/claude-mark-daily-log.sh",
+            "timeout": 10
           }
         ]
       }
@@ -143,7 +145,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/Documents/ai/bin/claude-compact-reinject.sh"
+            "command": "~/Documents/ai/bin/claude-compact-reinject.sh",
+            "timeout": 10
           }
         ]
       }

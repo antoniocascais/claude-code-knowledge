@@ -72,6 +72,16 @@ run_reinject() {
   grep -q "untracked.md" "$STATE"
 }
 
+# Injected hook output is truncated past 10k chars. An uncapped status list
+# would push the branch line past the cut on a large working tree.
+@test "checkpoint stays well under the 10k injection cap on a huge working tree" {
+  for i in $(seq 1 400); do printf 'x\n' > "$REPO/file-$i.md"; done
+  run_checkpoint
+  [ "$(wc -c < "$STATE")" -lt 10000 ]
+  grep -q "## branch" "$STATE"
+  grep -qx "main" "$STATE"
+}
+
 @test "checkpoint survives a non-git cwd" {
   mkdir -p "$TEST_DIR/plain"
   run_checkpoint "$TEST_DIR/plain"
@@ -127,6 +137,23 @@ run_reinject() {
 @test "reinject stays silent when no checkpoint exists" {
   run_reinject
   [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+# SessionStart's `compact` matcher fires on manual compaction too, so a
+# checkpoint left lying around gets replayed and asserted as ground truth
+# against whatever the branch looks like by then.
+@test "reinject consumes the checkpoint so it cannot be replayed stale" {
+  run_checkpoint
+  run_reinject
+  [ ! -f "$STATE" ]
+}
+
+@test "a second compaction with no fresh checkpoint injects nothing" {
+  run_checkpoint
+  run_reinject
+  [[ "$output" == *"Compaction checkpoint"* ]]
+  run_reinject
   [ -z "$output" ]
 }
 

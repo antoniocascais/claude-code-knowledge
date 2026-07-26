@@ -102,17 +102,29 @@ run_guard() {
 
 # --- claude-precompact-daily-log-guard.sh ---
 
-@test "guard blocks when this session has not logged" {
+# Exit 2 is what actually blocks compaction. A JSON {"decision":"block"} is
+# ignored on a non-zero exit, and its `reason` has no documented route to the
+# user for PreCompact — only the exit-2 stderr message does.
+@test "guard blocks with exit 2 when this session has not logged" {
   run_guard
-  [ "$status" -eq 0 ]
-  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
-  [ -n "$(printf '%s' "$output" | jq -r .reason)" ]
+  [ "$status" -eq 2 ]
 }
 
-@test "guard emits nothing but the decision object" {
+@test "guard tells the user why it blocked, and how to proceed" {
   run_guard
-  run bash -c "printf '%s' '$output' | jq -e 'keys == [\"decision\",\"reason\"]'"
-  [ "$status" -eq 0 ]
+  [[ "$output" == *"/daily-log"* ]]
+  [[ "$output" == *"/compact"* ]]
+}
+
+@test "guard prints its reason on stderr, where /compact surfaces it" {
+  run bash -c "printf '%s' '{\"session_id\":\"$SID\",\"trigger\":\"manual\"}' | $GUARD 2>/dev/null"
+  [ -z "$output" ]
+}
+
+@test "guard emits no JSON — it would be ignored on exit 2" {
+  run_guard
+  run bash -c "printf '%s' '$output' | jq -e . >/dev/null 2>&1"
+  [ "$status" -ne 0 ]
 }
 
 @test "guard allows when the flag exists" {
@@ -131,22 +143,21 @@ run_guard() {
 @test "guard blocks again on the second compact of the same session" {
   touch "$FLAG"
   run_guard
-  [ -z "$output" ]
+  [ "$status" -eq 0 ]
   run_guard
-  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+  [ "$status" -eq 2 ]
 }
 
 @test "a sibling session's log does not satisfy this session's guard" {
   touch "$TEST_DIR/daily-log-done.other-session"
   run_guard
-  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+  [ "$status" -eq 2 ]
   [ -f "$TEST_DIR/daily-log-done.other-session" ]
 }
 
 @test "guard does not crash on a missing session_id" {
   run bash -c "printf '%s' '{\"trigger\":\"manual\"}' | $GUARD"
-  [ "$status" -eq 0 ]
-  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+  [ "$status" -eq 2 ]
 }
 
 # --- the pair, end to end ---
@@ -154,7 +165,7 @@ run_guard() {
 @test "mark then guard allows; guard alone blocks" {
   run_mark "$NOTES/$TODAY.md"
   run_guard
-  [ -z "$output" ]
+  [ "$status" -eq 0 ]
   run_guard
-  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+  [ "$status" -eq 2 ]
 }
