@@ -1,3 +1,9 @@
+## Compact Instructions
+When compacting, preserve verbatim: the active task + its acceptance criteria,
+files created/modified (with paths), pending TODOs, decisions + rationale, and any
+prod/infra state touched. Drop resolved tangents and exploratory tool output already
+acted on. If a `/tmp/claude-state-*.md` checkpoint exists, treat it as ground truth.
+
 # General Guidelines
 
 • Be casual unless otherwise specified
