@@ -68,7 +68,7 @@ Session continuity — keeps durable state from being summarized away by compact
 - `bin/claude-mark-daily-log.sh` — `PostToolUse(Write|Edit)`: flags that this session wrote today's daily log
 - `bin/claude-precompact-daily-log-guard.sh` — `PreCompact(manual)`: blocks `/compact` until this session has logged. The flag is per-session and consumed on use, so a sibling session logging the same project won't satisfy it
 
-The checkpoint pairs with the Compact Instructions block in `CLAUDE.md.example` — the hook writes the file, that block tells Claude to trust it. Both halves are needed. Requires `jq`.
+See [Surviving Compaction](#surviving-compaction) for how the four fit together. Requires `jq`.
 
 Statusline & telemetry:
 - `bin/claude_code_statusline.sh` — Statusline integration
@@ -81,6 +81,41 @@ Statusline & telemetry:
 - Git commit style guidelines
 - Code comment philosophy
 - Communication protocols
+
+## Surviving Compaction
+
+When a session runs long, Claude Code replaces the conversation with a summary. You keep the gist and lose the specifics: which branch you were on, what you had edited but not committed, which question you had already settled. Four hooks in `bin/` narrow that loss.
+
+Before compaction runs, `claude-precompact-checkpoint.sh` writes a short Markdown file to your temp directory, named after the session:
+
+```
+# Compaction checkpoint
+- when: 2026-07-26T14:57:44+02:00
+- trigger: auto
+- cwd: /home/you/projects/thing
+
+## branch
+feat/some-work
+
+## git status --short
+ M src/parser.ts
+?? notes.md
+```
+
+After compaction finishes, `claude-compact-reinject.sh` reads that file and prints it. Claude Code feeds anything a `SessionStart` hook prints into the fresh context, so those facts reach Claude again with a note to trust them over the summary. The hook deletes the file as it reads it, so no checkpoint outlives the compaction it describes.
+
+The other two hooks solve a different problem. Compact before you write your daily log and the summary becomes the only record of the work, which makes tomorrow's log guesswork. So `claude-mark-daily-log.sh` watches for a write to today's log file, and `claude-precompact-daily-log-guard.sh` turns down a manual `/compact` until it sees one:
+
+```
+No /daily-log recorded in this session since the last compaction.
+Run /daily-log first, then /compact again.
+```
+
+That flag belongs to a single session, and the guard consumes it. Compact twice in one session and it asks you to log twice. A second window logging the same project will not let you through.
+
+The guard covers the `/compact` you type and nothing else. Blocking automatic compaction costs more than a missing log entry: when Claude Code compacts to recover from a full context window, a hook that blocks it surfaces the API error underneath and kills your request.
+
+`CLAUDE.md.example` opens with a Compact Instructions block that asks the summarizer to keep files, decisions, and pending work. Claude Code reloads `CLAUDE.md` after compaction rather than passing it to the summarizer, so treat that block as a nudge. The checkpoint file does the real work.
 
 ## Setup
 
