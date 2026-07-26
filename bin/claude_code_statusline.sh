@@ -255,7 +255,7 @@ normalize_reset_string() {
 # portion (from "Current session" to just before "Current week").
 extract_session_section() {
     if [[ ! -f "$USAGE_LOG" ]]; then return; fi
-    grep -m 1 "Current session" "$USAGE_LOG" | \
+    grep -m 1 -o "Current session.*" "$USAGE_LOG" | \
         sed -E 's/[Cc]urrent ?[Ww]eek.*//'
 }
 
