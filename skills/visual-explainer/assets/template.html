@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!--
+  visual-explainer base template.
+  Copy this file as the starting point. Replace the <main> content with the
+  page you're building, keeping the <style> design system and the small JS
+  block (tabs + smooth-scroll TOC) intact. Everything is inline — no network deps.
+  Demo components below show every available pattern; delete what you don't use.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PAGE_TITLE}}</title>
+<style>
+  :root {
+    --bg:        #ffffff;
+    --bg-soft:   #f7f8fa;
+    --bg-sunken: #f0f2f5;
+    --border:    #e3e6ea;
+    --border-strong: #cdd2d9;
+    --ink:       #1c2128;
+    --ink-soft:  #4a5159;
+    --ink-faint: #6b7280;
+    --accent:    #2563eb;   /* primary accent */
+    --accent-soft:#eff4ff;
+    /* callout semantics */
+    --info:#2563eb;  --info-bg:#eff4ff;
+    --tip:#0e9f6e;   --tip-bg:#ecfdf3;
+    --warn:#d97706;  --warn-bg:#fffaeb;
+    --insight:#7c3aed; --insight-bg:#f5f1ff;
+    --danger:#dc2626; --danger-bg:#fef2f2;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  .layout { display:grid; grid-template-columns:220px 1fr; gap:48px; align-items:start; }
+  @media (max-width:860px){ .layout{ grid-template-columns:1fr; } .toc{ display:none; } }
+
+  header.page { padding:56px 0 28px; border-bottom:1px solid var(--border); margin-bottom:40px; }
+  header.page .kicker { color:var(--accent); font-weight:600; font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; }
+  header.page h1 { font-size:2.1rem; line-height:1.2; margin:.3em 0 .2em; letter-spacing:-.02em; }
+  header.page .lede { color:var(--ink-soft); font-size:1.12rem; max-width:60ch; margin:0; }
+
+  /* sticky table of contents */
+  .toc { position:sticky; top:24px; font-size:.9rem; }
+  .toc h4 { margin:0 0 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); }
+  .toc a { display:block; padding:4px 10px; color:var(--ink-soft); text-decoration:none; border-left:2px solid var(--border); border-radius:0 4px 4px 0; }
+  .toc a:hover { color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft); }
+
+  h2 { font-size:1.45rem; margin:2.4em 0 .6em; letter-spacing:-.01em; scroll-margin-top:24px; }
+  h2:first-child{ margin-top:0; }
+  h3 { font-size:1.1rem; margin:1.6em 0 .4em; }
+  p { margin:.6em 0; }
+  a { color:var(--accent); }
+  code { font-family:var(--mono); font-size:.88em; background:var(--bg-sunken); padding:.12em .4em; border-radius:5px; }
+  pre { background:var(--bg-sunken); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; overflow:auto; font-family:var(--mono); font-size:.85rem; line-height:1.5; }
+  .term { font-weight:600; color:var(--ink); background:linear-gradient(transparent 62%, var(--accent-soft) 62%); padding:0 1px; }
+
+  /* ---- cards ---- */
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin:18px 0; }
+  .card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:18px 18px; box-shadow:var(--shadow); }
+  .card h3 { margin:0 0 .35em; font-size:1rem; }
+  .card .icon { font-size:1.3rem; line-height:1; }
+  .card p { margin:.3em 0 0; color:var(--ink-soft); font-size:.94rem; }
+
+  /* ---- callouts ---- */
+  .callout { border:1px solid var(--border); border-left-width:4px; border-radius:8px; padding:13px 16px; margin:16px 0; background:var(--bg-soft); }
+  .callout .label { font-weight:700; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .callout p { margin:.2em 0; font-size:.96rem; }
+  .callout.info    { border-left-color:var(--info);    background:var(--info-bg); }    .callout.info .label{ color:var(--info); }
+  .callout.tip     { border-left-color:var(--tip);     background:var(--tip-bg); }     .callout.tip .label{ color:var(--tip); }
+  .callout.warn    { border-left-color:var(--warn);    background:var(--warn-bg); }    .callout.warn .label{ color:var(--warn); }
+  .callout.insight { border-left-color:var(--insight); background:var(--insight-bg); } .callout.insight .label{ color:var(--insight); }
+  .callout.danger  { border-left-color:var(--danger);  background:var(--danger-bg); }  .callout.danger .label{ color:var(--danger); }
+
+  /* ---- tables ---- */
+  table { width:100%; border-collapse:collapse; margin:18px 0; font-size:.94rem; }
+  th,td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  thead th { background:var(--bg-soft); font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); border-bottom:1px solid var(--border-strong); }
+  tbody tr:hover { background:var(--bg-soft); }
+  td .yes{ color:var(--tip); font-weight:600; } td .no{ color:var(--danger); font-weight:600; }
+  .pick { background:var(--tip-bg) !important; } /* highlight the recommended row */
+
+  /* ---- diagram: box & arrow (flexbox) ---- */
+  .flow { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:20px 0; }
+  .node { background:var(--bg); border:1.5px solid var(--border-strong); border-radius:9px; padding:10px 16px; font-weight:600; font-size:.92rem; box-shadow:var(--shadow); text-align:center; }
+  .node.accent { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .node .sub { display:block; font-weight:400; font-size:.78rem; color:var(--ink-faint); }
+  .arrow { color:var(--ink-faint); font-size:1.3rem; line-height:1; user-select:none; }
+  .arrow.down { width:100%; text-align:center; }
+
+  /* ---- stepper ---- */
+  .steps { list-style:none; counter-reset:step; padding:0; margin:18px 0; }
+  .steps li { counter-increment:step; position:relative; padding:4px 0 18px 46px; border-left:2px solid var(--border); margin-left:14px; }
+  .steps li:last-child{ border-left-color:transparent; padding-bottom:0; }
+  .steps li::before { content:counter(step); position:absolute; left:-15px; top:0; width:28px; height:28px; background:var(--accent); color:#fff; border-radius:50%; display:grid; place-items:center; font-size:.85rem; font-weight:700; }
+  .steps li b { display:block; margin-bottom:2px; }
+  .steps li p { margin:0; color:var(--ink-soft); font-size:.94rem; }
+
+  /* ---- tree / mind-map ---- */
+  .tree, .tree ul { list-style:none; margin:0; padding-left:22px; }
+  .tree li { position:relative; padding:3px 0; }
+  .tree li::before { content:""; position:absolute; left:-12px; top:0; bottom:0; border-left:1px solid var(--border-strong); }
+  .tree li::after { content:""; position:absolute; left:-12px; top:14px; width:10px; border-top:1px solid var(--border-strong); }
+  .tree > li:last-child::before { bottom:auto; height:14px; }
+  .tree .leaf { background:var(--bg-soft); border:1px solid var(--border); border-radius:6px; padding:2px 9px; font-size:.9rem; display:inline-block; }
+
+  /* ---- accordion ---- */
+  details { border:1px solid var(--border); border-radius:8px; margin:12px 0; background:var(--bg); overflow:hidden; }
+  details > summary { cursor:pointer; padding:12px 16px; font-weight:600; background:var(--bg-soft); list-style:none; }
+  details > summary::-webkit-details-marker{ display:none; }
+  details > summary::before { content:"▸"; color:var(--accent); margin-right:8px; display:inline-block; transition:transform .15s; }
+  details[open] > summary::before { transform:rotate(90deg); }
+  details .body { padding:6px 16px 16px; }
+
+  /* ---- tabs ---- */
+  .tabs { margin:18px 0; }
+  .tabs .tablist { display:flex; gap:4px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .tabs .tab { padding:8px 14px; cursor:pointer; border:none; background:none; font:inherit; font-size:.92rem; font-weight:600; color:var(--ink-faint); border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tabs .tab[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); }
+  .tabs .panel { display:none; padding:16px 2px; }
+  .tabs .panel[data-active] { display:block; }
+
+  footer.page { margin:64px 0 40px; padding-top:20px; border-top:1px solid var(--border); color:var(--ink-faint); font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <span class="kicker">{{KICKER — topic area}}</span>
+    <h1>{{PAGE_TITLE}}</h1>
+    <p class="lede">{{One-sentence orienting summary of what this page explains.}}</p>
+  </header>
+
+  <div class="layout">
+    <!-- TOC: list each section; remove if page is short -->
+    <nav class="toc">
+      <h4>On this page</h4>
+      <a href="#overview">Overview</a>
+      <a href="#diagram">Architecture</a>
+      <a href="#tradeoffs">Tradeoffs</a>
+      <a href="#detail">Detail</a>
+    </nav>
+
+    <main>
+      <!-- ============ COMPONENT DEMOS — replace with real content ============ -->
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>Lead with a tight summary. Highlight <span class="term">key terms</span> inline so the eye lands on them.</p>
+
+        <div class="callout insight">
+          <span class="label">Key insight</span>
+          <p>The single most important takeaway goes here, up top.</p>
+        </div>
+
+        <div class="grid">
+          <div class="card"><span class="icon">🧩</span><h3>Concept A</h3><p>One-line definition or role.</p></div>
+          <div class="card"><span class="icon">⚙️</span><h3>Concept B</h3><p>One-line definition or role.</p></div>
+          <div class="card"><span class="icon">🔌</span><h3>Concept C</h3><p>One-line definition or role.</p></div>
+        </div>
+      </section>
+
+      <section id="diagram">
+        <h2>Architecture / flow</h2>
+        <!-- Horizontal box-and-arrow. For complex topology use inline <svg> instead. -->
+        <div class="flow">
+          <div class="node">Client</div>
+          <span class="arrow">→</span>
+          <div class="node accent">Ingress<span class="sub">TLS term</span></div>
+          <span class="arrow">→</span>
+          <div class="node">Service<span class="sub">ClusterIP</span></div>
+          <span class="arrow">→</span>
+          <div class="node">Pods</div>
+        </div>
+
+        <div class="callout info">
+          <span class="label">Note</span>
+          <p>Use <code>--accent</code> nodes to mark the focal point of the diagram.</p>
+        </div>
+      </section>
+
+      <section id="tradeoffs">
+        <h2>Tradeoffs / decision</h2>
+        <table>
+          <thead><tr><th>Option</th><th>Pros</th><th>Cons</th><th>When</th></tr></thead>
+          <tbody>
+            <tr class="pick"><td><b>Option A</b> ⭐</td><td><span class="yes">✓</span> Simple</td><td><span class="no">✗</span> Less flexible</td><td>Default choice</td></tr>
+            <tr><td>Option B</td><td><span class="yes">✓</span> Flexible</td><td><span class="no">✗</span> More ops</td><td>Scale &gt; X</td></tr>
+          </tbody>
+        </table>
+        <div class="callout tip"><span class="label">Recommendation</span><p>State the pick and the one-line why.</p></div>
+      </section>
+
+      <section id="detail">
+        <h2>Detail (progressive)</h2>
+
+        <!-- Tabs: parallel alternatives -->
+        <div class="tabs" data-tabs>
+          <div class="tablist" role="tablist">
+            <button class="tab" role="tab" aria-selected="true">Approach 1</button>
+            <button class="tab" role="tab" aria-selected="false">Approach 2</button>
+          </div>
+          <div class="panel" data-active role="tabpanel"><p>First approach detail.</p></div>
+          <div class="panel" role="tabpanel"><p>Second approach detail.</p></div>
+        </div>
+
+        <!-- Accordion: deep detail hidden until wanted -->
+        <details>
+          <summary>Edge cases & gotchas</summary>
+          <div class="body">
+            <div class="callout warn"><span class="label">Warning</span><p>Failure mode worth calling out.</p></div>
+            <p>Longer explanation lives here, out of the way until expanded.</p>
+          </div>
+        </details>
+
+        <!-- Stepper: ordered process -->
+        <ol class="steps">
+          <li><b>First</b><p>What happens.</p></li>
+          <li><b>Then</b><p>Next step.</p></li>
+          <li><b>Finally</b><p>Outcome.</p></li>
+        </ol>
+      </section>
+      <!-- ============ END DEMOS ============ -->
+    </main>
+  </div>
+
+  <footer class="page">Generated by visual-explainer.</footer>
+</div>
+
+<script>
+  // Tabs — the only JS the design system needs.
+  document.querySelectorAll('[data-tabs]').forEach(function (group) {
+    var tabs = group.querySelectorAll('.tab');
+    var panels = group.querySelectorAll('.panel');
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) { t.setAttribute('aria-selected', 'false'); });
+        panels.forEach(function (p) { p.removeAttribute('data-active'); });
+        tab.setAttribute('aria-selected', 'true');
+        if (panels[i]) panels[i].setAttribute('data-active', '');
+      });
+    });
+  });
+</script>
+</body>
+</html>

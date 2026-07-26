@@ -16,3 +16,6 @@ __pycache__/
 
 # sensitive files
 .gh-token
+
+# Sandbox browsing history — a record of every query and URL fetched
+skills/web-sandbox/logs/
