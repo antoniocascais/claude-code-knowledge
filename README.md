@@ -9,7 +9,7 @@ My Claude Code configs — grab what you need.
 |-------|-------------|
 | `git-commit` | Analyzes staged changes, proposes commit structure (single/multiple), generates messages |
 | `skill-forge` | Scaffolds new skills following official spec |
-| `pr-review` | Code review for diffs, commits, branches, PRs |
+| `pr-review` | Code review for diffs, commits, branches, PRs — correctness/security scanners plus an SRE operational-risk lens, with a triage gate that scopes huge diffs before reading them |
 | `note-taking` | Task notes + knowledge base management (includes daily log promotion) |
 | `daily-log` | Per-project daily session log — mid-level summaries with notes.md promotion flags |
 | `planner` | Task capture and organization |
@@ -18,10 +18,15 @@ My Claude Code configs — grab what you need.
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `stop-slop` | Removes AI writing tells from prose — vendored from [hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop) (MIT) |
 | `clarice` | Mock interview coach — runs realistic sessions (behavioral, technical, system design, challenge walkthrough) with weighted scoring, critical-miss detection, and detailed gap reports |
-| `fable` | Dispatches a task to the `fable` subagent with a prompt shaped the way Claude Fable 5 wants to be prompted |
+| `ask-fable` | Dispatches a task to the `fable` subagent with a prompt shaped the way Claude Fable 5 wants to be prompted, then holds a back-and-forth with it across turns |
 | `prompt-fable` | Drafts a copy-pasteable Fable 5 prompt without dispatching anything — for use elsewhere (web app, another session) |
 | `test-quality` | Unit test generation and review — boundary/error-path coverage, mutation testing, weak-assertion detection |
 | `latex-presentation` | LaTeX Beamer decks — theme selection, font pairing, TikZ diagrams, overlays (user-invoked only) |
+| `antfarm` | Codebase recon via an ant-colony pattern — cheap scouts explore disjoint territories in parallel and dump to scratchpads, one stronger verifier cross-checks every claim before reporting |
+| `council` | Convenes 3 specialist personas to pressure-test a plan or decision, returning framed positions and a dissent log rather than a false consensus |
+| `dispatch` | Serializes the current design discussion into an implementation spec and hands the build to the `executor` subagent |
+| `visual-explainer` | Renders a discussion, architecture, or wall of text as a self-contained HTML page |
+| `web-sandbox` | Runs web search and page fetches inside a Docker container instead of on the host, with every query logged |
 
 ### Commands
 | Command | Description |
@@ -40,6 +45,10 @@ My Claude Code configs — grab what you need.
 | `knowledge-base-curator` | Enhances knowledge base entries |
 | `task-notes-cleaner` | Cleans outdated context from task notes |
 | `fable` | Claude Fable 5 agent for the hardest, longest-horizon work — multi-hour implementations, deep debugging, whole-repo review |
+| `software-architect` | Architecture review scored against a rubric (scalability, coupling, reliability, security, cost, operability), ADR authoring, system-design tradeoffs |
+| `executor` | Implements a fully-specified coding task from a written spec — executes, does not design |
+| `council-deep` | Specialist seat pinned to a full Sonnet model ID for the harder reasoning and verification roles |
+| `council-fast` | Cheap parallel specialist seat pinned to a full Haiku model ID |
 
 ### Output Styles
 - `output-styles/kitty-safe.md` — Drops blockquotes and italics, which render unreadably in Kitty
@@ -52,6 +61,14 @@ My Claude Code configs — grab what you need.
 - `bin/claude-validate-git.sh` — Catches unsafe git operations (e.g. committing straight to `main`)
 - `bin/claude-validate-build.sh` — Validates build/test invocations
 - `bin/claude-block-absolute-paths.sh` — Forces relative paths so `Bash(git log:*)`-style permission rules stay grantable
+
+Session continuity — keeps durable state from being summarized away by compaction:
+- `bin/claude-precompact-checkpoint.sh` — `PreCompact(auto)`: snapshots task state, cwd, and git context to `/tmp/claude-state-$session_id.md`
+- `bin/claude-compact-reinject.sh` — `SessionStart(compact)`: writes that checkpoint back into context as ground truth over the lossy summary
+- `bin/claude-mark-daily-log.sh` — `PostToolUse(Skill)`: flags that this session ran `/daily-log`
+- `bin/claude-precompact-daily-log-guard.sh` — `PreCompact(manual)`: blocks `/compact` until this session has logged. The flag is per-session and consumed on use, so a sibling session logging the same project won't satisfy it
+
+The checkpoint pairs with the Compact Instructions block in `CLAUDE.md.example` — the hook writes the file, that block tells Claude to trust it. Both halves are needed. Requires `jq`.
 
 Statusline & telemetry:
 - `bin/claude_code_statusline.sh` — Statusline integration
@@ -149,6 +166,19 @@ Simulates realistic mock interviews tailored to your CV and target role. Support
 Supported formats: `.md`, `.txt`, `.pdf`, `.docx`
 
 **Output:** Two files per session — `clarice-{SESSION_ID}-context.md` (confirmed interview context) and `clarice-{SESSION_ID}-report.md` (scored assessment with strengths, concerns, and prep checklist). Tracks progress across sessions.
+
+### web-sandbox (Isolated Web Access)
+
+Runs searches and page fetches in a Docker container so untrusted pages never touch the host. Reuses your existing host login by read-only mounting `~/.claude/.credentials.json` — log in on the host first.
+
+**Setup:**
+```bash
+cd skills/web-sandbox && make build   # one-time
+```
+
+Queries and fetched URLs are logged to `skills/web-sandbox/logs/`, which is gitignored — it is a record of your browsing and should not be committed.
+
+**Requirements:** `docker`, a host Claude login
 
 ### workflow-review
 
