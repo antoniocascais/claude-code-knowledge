@@ -274,7 +274,7 @@ if [ -d "$AGENTS_SOURCE_DIR" ]; then
         target_parent="$(dirname "$target_path")"
         mkdir -p "$target_parent"
 
-        if [ "$(resolve_path "$agent_file")" = "$(resolve_path "$target_path")" ]; then
+        if [ "$agent_file" -ef "$target_path" ]; then
             echo "Skipping $target_path (source and destination are the same file)"
             continue
         fi
