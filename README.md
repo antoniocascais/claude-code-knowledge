@@ -16,6 +16,7 @@ My Claude Code configs — grab what you need.
 | `workflow-review` | Reviews CC sessions via [BM25 cross-session search](https://eric-tramel.github.io/blog/2026-02-07-searchable-agent-memory/) and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
 | `ctask` | Local task tracker — manages tasks, dependencies, comments, labels via SQLite |
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
+| `stop-slop` | Removes AI writing tells from prose — vendored from [hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop) (MIT) |
 | `clarice` | Mock interview coach — runs realistic sessions (behavioral, technical, system design, challenge walkthrough) with weighted scoring, critical-miss detection, and detailed gap reports |
 
 ### Commands
