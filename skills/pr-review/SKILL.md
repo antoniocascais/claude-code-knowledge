@@ -1,7 +1,7 @@
 ---
 name: pr-review
-description: Reviews code changes before merging. Use when reviewing PRs, checking staged changes, reviewing diffs, code review, merge readiness check, or validating changes before commit/push.
-allowed-tools: Read Glob Grep Bash(git diff:*) Bash(git status:*) Bash(git log:*) Bash(git show:*) Bash(git branch:*) Bash(gitleaks:*) Bash(trufflehog:*) Bash(trivy:*) Bash(shellcheck:*) Bash(npm audit:*) Bash(yarn audit:*) Bash(pip-audit:*) Bash(safety:*) Bash(tfsec:*) Bash(checkov:*) Bash(hadolint:*) AskUserQuestion
+description: Reviews code changes before merging, through a correctness/security lens and an SRE operational-risk lens. Use when reviewing PRs, checking staged changes, reviewing diffs, code review, merge readiness check, assessing deploy or rollback risk, or validating changes before commit/push.
+allowed-tools: Read Glob Grep Bash(git diff:*) Bash(git status:*) Bash(git log:*) Bash(git show:*) Bash(git branch:*) Bash(git merge-base:*) Bash(gitleaks:*) Bash(trufflehog:*) Bash(trivy:*) Bash(shellcheck:*) Bash(npm audit:*) Bash(yarn audit:*) Bash(pip-audit:*) Bash(safety:*) Bash(tfsec:*) Bash(checkov:*) Bash(hadolint:*) AskUserQuestion
 ---
 
 # PR Review Skill
@@ -70,7 +70,21 @@ Check for presence of:
 
 Note detected stack for context-aware analysis.
 
-## Phase 4: Run Scanners
+## Phase 4: Triage (large diffs only)
+
+If `git diff --stat` shows more than ~20 files or a few thousand lines, **do not read every file.** Reading a huge diff end-to-end produces a shallow review of everything instead of a deep review of what matters.
+
+Instead:
+1. Group the changed paths by area, service, or module.
+2. Flag the high-risk areas first: deploy manifests, Helm/Kustomize, Terraform/IaC, CI/CD pipelines, Dockerfiles, config/env/secrets, migrations, feature flags, networking, and anything touching runtime startup or health checks.
+3. Give a tight per-area summary — line counts and what each area appears to do.
+4. **Use AskUserQuestion to ask which areas to review deeply. Wait for the answer.**
+
+Then scope the remaining phases to the selected paths: `git diff main...HEAD -- <path>`.
+
+Skip this phase entirely for small diffs — the gate costs a round trip and buys nothing.
+
+## Phase 5: Run Scanners
 
 Execute relevant scanners (skip silently if not installed):
 
@@ -95,11 +109,13 @@ Execute relevant scanners (skip silently if not installed):
 | K8s | trivy | `trivy config .` |
 | Shell scripts | shellcheck | `shellcheck <file>` |
 
-## Phase 5: Code Review
+## Phase 6: Code Review
 
 Analyze the diff for all categories. Be pragmatic—flag likely issues, skip obvious false positives.
 
-### 5.1 Code Quality
+When the diff touches infrastructure, deploy config, or anything that runs in production, **lead the report with 6.8** — operational risk outranks style.
+
+### 6.1 Code Quality
 - Best practices for detected stack
 - Readability and maintainability
 - Error handling appropriateness
@@ -107,13 +123,13 @@ Analyze the diff for all categories. Be pragmatic—flag likely issues, skip obv
 - Idiomatic patterns
 - Type safety issues
 
-### 5.2 Codebase Consistency
+### 6.2 Codebase Consistency
 - Match existing patterns in the repo
 - Naming conventions alignment
 - File organization consistency
 - Don't introduce a 10th way of doing something
 
-### 5.3 Security
+### 6.3 Security
 
 **Manual checks:**
 - Hardcoded secrets, API keys, passwords, connection strings
@@ -124,20 +140,20 @@ Analyze the diff for all categories. Be pragmatic—flag likely issues, skip obv
 - Sensitive data in logs/errors/URLs
 - Container: running as root, privileged mode, unverified base images
 
-### 5.4 Bug Detection
+### 6.4 Bug Detection
 - Logic errors, off-by-one
 - Null/undefined handling
 - Race conditions
 - Resource leaks (unclosed handles, connections)
 - Breaking changes to existing APIs
 
-### 5.5 Dependencies
+### 6.5 Dependencies
 - Known vulnerable package versions
 - Outdated dependencies with security patches
 - Unpinned versions
 - Suspicious or typosquatted package names
 
-### 5.6 Performance
+### 6.6 Performance
 - N+1 query patterns
 - Sync operations in async contexts
 - Unbounded loops/recursion
@@ -145,14 +161,27 @@ Analyze the diff for all categories. Be pragmatic—flag likely issues, skip obv
 - Missing pagination
 - Blocking I/O in hot paths
 
-### 5.7 Deprecations & Drift
+### 6.7 Deprecations & Drift
 - Deprecated APIs, functions, patterns
 - Breaking changes in dependencies
 - Hardcoded values that should be variables
 - Environment-specific configs in shared code
 - Configuration diverging from IaC patterns
 
-## Phase 6: Report
+### 6.8 Operational Risk (SRE lens)
+
+Ask what this change does to a running production system, not just whether the code is correct.
+
+- **Blast radius & rollback**: what breaks in prod if this is wrong, how hard is it to revert, is it backward-compatible with the currently-deployed version?
+- **Deploy & runtime risk**: config changes, resource limits, startup/liveness/readiness probes, secrets handling.
+- **Failure modes**: retries, timeouts, error handling, partial-failure behavior, idempotency.
+- **Observability**: are the new code paths logged, metered, traced? Can this be debugged at 3am by someone who did not write it?
+- **Migrations & data**: ordering, reversibility, downtime, dual-write/dual-read windows.
+- **Scaling & cost**: hot paths, unbounded loops or memory, new external calls, added per-request latency.
+
+When reviewing an unfamiliar codebase, explain the domain context behind a finding rather than assuming it — and say explicitly when something needs the original author or a domain expert rather than guessing.
+
+## Phase 7: Report
 
 Output a succinct markdown report:
 
