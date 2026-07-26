@@ -1,6 +1,7 @@
 ---
 name: quiz
 description: Generates multiple choice quiz questions based on current conversation context. Use when testing understanding, reviewing what was discussed, or wanting a knowledge check on the session.
+disable-model-invocation: true
 allowed-tools: Bash(date *), Read, Write
 ---
 

@@ -13,13 +13,9 @@ My Claude Code configs — grab what you need.
 | `note-taking` | Task notes + knowledge base management (includes daily log promotion) |
 | `daily-log` | Per-project daily session log — mid-level summaries with notes.md promotion flags |
 | `planner` | Task capture and organization |
-| `codemap` | Generate codebase maps with architecture diagrams (WIP - still testing) |
 | `workflow-review` | Reviews CC sessions via [BM25 cross-session search](https://eric-tramel.github.io/blog/2026-02-07-searchable-agent-memory/) and proposes workflow improvements (CLAUDE.md updates, new skills, underused features) |
-| `codex` | AI peer review via OpenAI Codex CLI — Claude consults Codex for code review, architecture decisions, and trade-off validation |
 | `ctask` | Local task tracker — manages tasks, dependencies, comments, labels via SQLite |
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
-| `c7` | Fetches up-to-date library docs from Context7, saves to /tmp/context7/ |
-| `voice-mode` | TTS transport layer using [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) — speaks all responses, composable with other skills |
 | `clarice` | Mock interview coach — runs realistic sessions (behavioral, technical, system design, challenge walkthrough) with weighted scoring, critical-miss detection, and detailed gap reports |
 
 ### Commands
@@ -101,33 +97,6 @@ ln -s /path/to/your/config/folder/skills ~/.claude/skills
 
 ## Skill-Specific Setup
 
-### codex (AI Peer Review)
-
-Uses [OpenAI Codex CLI](https://github.com/openai/codex) as a second opinion for code review and technical decisions. Claude consults Codex, they can disagree and argue (up to 3 rounds), then you get a summary of what they agreed/disagreed on.
-
-**Invocation:** `/codex` or `/codex-review`
-
-**Auto-trigger (WIP):** Skill is designed to auto-consult Codex before presenting alternatives or completing significant work, but this isn't reliable yet. Use explicit invocation for now.
-
-**Setup:**
-```bash
-npm install -g @openai/codex
-```
-
-**Example output:**
-```
-After discussion, updated findings:
-
-| Issue                       | Status                                                | Action             |
-|-----------------------------|-------------------------------------------------------|--------------------|
-| jq parse error on assignment| Downgraded to low - email-triage.sh validates JSON first | Optional hardening |
-| ollama pull retries         | Valid - need until clause                             | Fix required       |
-| test-json-parse invalid JSON| False positive - doesn't exit                         | No fix needed      |
-| // empty drops false        | NEW BUG - test fails at line 42                       | Fix required       |
-
-Codex found a real bug: jq -r ".$field // empty" treats false as falsy and returns empty string.
-```
-
 ### ctask (Local Task Tracker)
 
 Requires a `ctask` bash wrapper script on your `$PATH`. The wrapper is a thin CLI over a local SQLite database — it handles task CRUD, comments, dependencies, and labels.
@@ -140,33 +109,6 @@ ln -s "$(pwd)/skills/ctask/bin/ctask" ~/bin/ctask   # or anywhere on $PATH
 Override the database location with `CTASK_DB` env var (default: `~/Documents/claude/tasks.db`). Database auto-initializes on first use.
 
 **Requirements:** `sqlite3`
-
-### voice-mode (TTS Responses)
-
-Speaks all Claude responses aloud using [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) running in Docker.
-
-**Invocation:** `/voice-mode` or `/voice-mode jean` (to pick a voice)
-
-**Setup:**
-```bash
-# 1. Clone and start Pocket TTS
-git clone https://github.com/kyutai-labs/pocket-tts.git
-cd pocket-tts && docker compose up -d
-
-# 2. Install mpv (audio playback)
-# Arch/Manjaro: pacman -S mpv
-# Ubuntu/Debian: apt install mpv
-# macOS: brew install mpv
-```
-
-**Environment variables (all optional):**
-- `POCKET_TTS_PORT` — server port
-- `POCKET_TTS_VOICE` — voice name
-- `POCKET_TTS_SPEED` — playback speed
-
-**Available voices:** alba, marius, javert, jean, fantine, cosette, eponine, azelma
-
-**Requirements:** Docker, mpv, curl
 
 ### clarice (Mock Interview Prep)
 

@@ -7,6 +7,7 @@ description: |
   Analyzes tool usage patterns, CLAUDE.md configuration, and compares against
   CC best practices. Proposes: CLAUDE.md updates, new skills, underused CC features.
   Saves session summaries to .claude/workflow-reviews/ for cross-session continuity.
+disable-model-invocation: true
 allowed-tools:
   - Read
   - Write

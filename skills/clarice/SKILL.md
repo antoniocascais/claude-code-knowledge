@@ -1,6 +1,7 @@
 ---
 name: clarice
 description: Conducts realistic mock interviews with detailed feedback and scoring. Use for interview prep, behavioral questions, technical interviews, STAR practice, system design interviews, or interview coaching.
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
 
