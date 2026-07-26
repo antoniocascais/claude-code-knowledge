@@ -3,8 +3,7 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
-    "CLAUDE_CODE_EFFORT_LEVEL": "xhigh"
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
   },
   "attribution": {
     "commit": "",
@@ -30,8 +29,6 @@
       "Bash(make:*)",
       "Skill(note-taking)",
       "Skill(daily-log)",
-      "Skill(voice-mode)",
-      "Bash(~/.claude/skills/voice-mode/scripts/tts.sh:*)",
       "Bash(docker ps:*)",
       "Bash(docker images:*)",
       "Bash(docker inspect:*)",
@@ -63,17 +60,6 @@
     ]
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo 'export BASH_ENV=~/Documents/ai/bin/gh-function.sh' >> \"$CLAUDE_ENV_FILE\""
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "*",
@@ -115,15 +101,6 @@
             "command": "~/Documents/ai/bin/claude-block-absolute-paths.sh"
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Scope check: Is this edit directly addressing what was requested? Allow: bug fixes, requested changes, related config updates. Block: reformatting or refactoring outside stated scope. When uncertain, allow and trust user to correct."
-          }
-        ]
       }
     ]
   },
@@ -133,10 +110,10 @@
   },
   "enabledPlugins": {
     "code-simplifier@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true
+    "chrome-devtools-mcp@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -153,10 +130,11 @@
     }
   },
   "outputStyle": "Kitty Safe",
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
   "promptSuggestionEnabled": false,
   "theme": "dark-daltonized",
   "editorMode": "vim",
+  "agentPushNotifEnabled": true,
   "voiceEnabled": true,
   "additionalDirectories": [
     "~/Documents/claude/",
@@ -165,5 +143,5 @@
   "feedbackSurveyState": {
     "lastShownTime": 1753975711695
   },
-  "agentPushNotifEnabled": true
+  "remoteControlAtStartup": false
 }
