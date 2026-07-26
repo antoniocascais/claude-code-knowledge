@@ -12,7 +12,6 @@
   "permissions": {
     "allow": [
       "Read(~/Documents/claude/**)",
-      "Write(~/Documents/claude/**)",
       "Edit(~/Documents/claude/**)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
