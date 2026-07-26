@@ -2,8 +2,10 @@
   "cleanupPeriodDays": 30,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-5",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "85"
   },
   "attribution": {
     "commit": "",
@@ -23,6 +25,8 @@
       "Bash(gh search code:*)",
       "Bash(gitleaks:*)",
       "Bash(trivy:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
       "Bash(ctask:*)",
       "Skill(ctask)",
       "Bash(make:*)",
@@ -98,6 +102,48 @@
           {
             "type": "command",
             "command": "~/Documents/ai/bin/claude-block-absolute-paths.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-precompact-checkpoint.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-precompact-daily-log-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-mark-daily-log.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/Documents/ai/bin/claude-compact-reinject.sh"
           }
         ]
       }
