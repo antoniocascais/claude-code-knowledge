@@ -77,29 +77,63 @@ while IFS= read -r word; do
 done < <(echo "$command" | grep -oE '\S+')
 shopt -u nullglob
 
-# 4. Extract file arguments and check against gitignore
-# This is heuristic - catches common patterns like:
-#   cat file.txt, less file.txt, head file.txt, grep pattern file.txt
-# Won't catch everything but covers common cases
-
-extract_files() {
-  # Extract words that look like file paths (contain / or .)
-  echo "$command" | grep -oE '\S+' | grep -E '(\.|/)' | grep -vE '^-'
+extract_tokens() {
+  echo "$command" | grep -oE '\S+' | grep -vE '^-'
 }
 
-if git -C "$CLAUDE_PROJECT_DIR" rev-parse --git-dir &>/dev/null; then
-  for potential_file in $(extract_files); do
-    # Skip if looks like a flag or option
-    [[ "$potential_file" == -* ]] && continue
+# 4a. Secret-file name patterns.
+# Deliberately independent of gitignore: a repo that forgot to ignore its
+# tfstate is the case most worth catching, and there is no existence check —
+# `scp host:~/.ssh/id_rsa .` has no local file to stat.
+# Suffix-anchored on purpose: *token*/*secret* would eat tokenizer.py and
+# secret-manager.go.
+is_secret_name() {
+  case "$1" in
+    *.pem|*.key|*.p12|*.pfx|*.jks|*.keystore)       return 0 ;;
+    id_rsa|id_dsa|id_ecdsa|id_ed25519)              return 0 ;;
+    .netrc|_netrc|.npmrc|.pypirc|.htpasswd)         return 0 ;;
+    credentials|credentials.json|.credentials.json) return 0 ;;
+    .gh-token|*.token|*_token|*-token)              return 0 ;;
+    secrets.yaml|secrets.yml|secrets.json|.secrets|*.secret) return 0 ;;
+    *.tfstate|*.tfstate.*|*.tfvars)                 return 0 ;;
+    kubeconfig|.dockercfg)                          return 0 ;;
+    service-account*.json)                          return 0 ;;
+  esac
+  return 1
+}
 
-    # Resolve path
+# Gitignored for tidiness, not secrecy. Checked after 4a, so secrets.md still
+# blocks. Cost of omitting this: every read of CLAUDE.md/SKILL.md burns a turn.
+is_benign_name() {
+  case "$1" in
+    *.md|*.md.example)                       return 0 ;;
+    settings.json|settings.local.json)       return 0 ;;
+    .gitignore|.gitattributes|.editorconfig) return 0 ;;
+  esac
+  return 1
+}
+
+for tok in $(extract_tokens); do
+  base=$(basename "$tok")
+  if is_secret_name "$base" || [[ "$tok" == *.kube/config ]] || [[ "$tok" == *.docker/config.json ]]; then
+    echo "🚫 Access denied: '$tok' matches a secret-file pattern" >&2
+    exit 2
+  fi
+done
+
+# 4b. Gitignored-file sweep — the broad net for secrets with no name signal
+# (tfstate, kubeconfig, .env under another name).
+if git -C "$CLAUDE_PROJECT_DIR" rev-parse --git-dir &>/dev/null; then
+  for potential_file in $(extract_tokens | grep -E '(\.|/)'); do
+    base=$(basename "$potential_file")
+    is_benign_name "$base" && continue
+
     if [[ "$potential_file" != /* ]]; then
       full_path="$CLAUDE_PROJECT_DIR/$potential_file"
     else
       full_path="$potential_file"
     fi
 
-    # Check if file exists and is gitignored
     if [[ -e "$full_path" ]] && git -C "$CLAUDE_PROJECT_DIR" check-ignore -q "$full_path" 2>/dev/null; then
       echo "🚫 Access denied: bash command references gitignored file '$potential_file'" >&2
       exit 2
