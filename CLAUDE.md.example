@@ -1,6 +1,3 @@
-# Import Obsidian-specific instructions
-@/path/to/claude/CLAUDE.md
-
 # General Guidelines
 
 • Be casual unless otherwise specified
@@ -9,8 +6,6 @@
 • Suggest solutions that I didn't think about--anticipate my needs
 
 # Audience & Context
-
-Current year: 2026
 
 I'm a senior DevOps/SRE/Platform engineer. Adjust accordingly:
 - Skip basic explanations
@@ -26,37 +21,7 @@ Consider using the note-taking skill after solving complex problems, learning us
 
 # Code Navigation Tools
 
-## ast-grep - Structural Code Search
-ast-grep is a powerful AST-based tool for navigating codebases structurally, not textually. Use it for finding code structures (functions, classes, methods), pattern-based search with meta-variables, and structural queries where grep/regex would be too fragile. Works across 30+ languages.
-
-**Pattern Syntax:**
-- `$VAR` - matches any single AST node (variable name)
-- `$$$ARGS` - matches zero or more nodes (function arguments, statements)
-- Patterns use actual code syntax, not regex
-
-**Common Examples** *(tested with ast-grep v0.39.5)*:
-```bash
-# Find function definitions
-ast-grep --pattern 'function $NAME($$$ARGS) { $$$ }' --lang js
-ast-grep --pattern 'def $NAME($$$ARGS):' --lang python
-
-# Find class declarations
-ast-grep --pattern 'class $NAME { $$$ }' --lang js
-ast-grep --pattern 'class $NAME:' --lang python
-
-# Find method calls
-ast-grep --pattern '$OBJ.$METHOD($$$ARGS)' --lang js
-
-# Find imports
-ast-grep --pattern 'import $NAME from $SOURCE' --lang js
-ast-grep --pattern 'from $MODULE import $NAME' --lang python
-```
-
-**Tool Selection Guide:**
-- **ast-grep**: Structural code patterns (functions, classes, method signatures)
-- **Grep**: Content search (strings, comments, configuration values)
-- **Glob**: File name patterns (*.js, src/**/*.py)
-- **Read**: Known file paths or small file sets
+Prefer `ast-grep` over grep for structural search (functions, classes, signatures).
 
 # Git Commit Style
 
@@ -67,10 +32,7 @@ ast-grep --pattern 'from $MODULE import $NAME' --lang python
 
 # Code Comments
 
-- Minimal—assume senior engineer reader
 - Comment the WHY, not the HOW
-- Skip obvious: `# increment counter` → delete this
-- Keep: `# AWS SDK bug workaround - see issue #1234`
 
 # Communication Guidelines
 
