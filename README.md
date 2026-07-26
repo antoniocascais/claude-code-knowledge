@@ -18,6 +18,10 @@ My Claude Code configs — grab what you need.
 | `quiz` | Conversation quiz generator — tests understanding of what was discussed |
 | `stop-slop` | Removes AI writing tells from prose — vendored from [hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop) (MIT) |
 | `clarice` | Mock interview coach — runs realistic sessions (behavioral, technical, system design, challenge walkthrough) with weighted scoring, critical-miss detection, and detailed gap reports |
+| `fable` | Dispatches a task to the `fable` subagent with a prompt shaped the way Claude Fable 5 wants to be prompted |
+| `prompt-fable` | Drafts a copy-pasteable Fable 5 prompt without dispatching anything — for use elsewhere (web app, another session) |
+| `test-quality` | Unit test generation and review — boundary/error-path coverage, mutation testing, weak-assertion detection |
+| `latex-presentation` | LaTeX Beamer decks — theme selection, font pairing, TikZ diagrams, overlays (user-invoked only) |
 
 ### Commands
 | Command | Description |
@@ -28,21 +32,35 @@ My Claude Code configs — grab what you need.
 | `review-knowledge` | Knowledge base review |
 | `user/context` | Load context from topic folders |
 | `pr-respond` | Responds to PR review comments from screenshots |
+| `foss-app-review` | Security review of the diff between two versions of a FOSS Android app |
 
 ### Agents
 | Agent | Description |
 |-------|-------------|
 | `knowledge-base-curator` | Enhances knowledge base entries |
 | `task-notes-cleaner` | Cleans outdated context from task notes |
+| `fable` | Claude Fable 5 agent for the hardest, longest-horizon work — multi-hour implementations, deep debugging, whole-repo review |
+
+### Output Styles
+- `output-styles/kitty-safe.md` — Drops blockquotes and italics, which render unreadably in Kitty
 
 ### Hooks & Utilities
-- `bin/claude-block-sensitive-bash.sh` — Block sensitive bash commands
-- `bin/claude-block-sensitive-files.sh` — Block sensitive file access
+
+`PreToolUse` guards (wire up in `settings.json`):
+- `bin/claude-block-sensitive-files.sh` — Blocks Read/Edit/Write/Glob/Grep on secret-looking paths
+- `bin/claude-block-sensitive-bash.sh` — Blocks bash commands touching secret files (suffix-anchored name patterns + gitignore sweep with a benign-name allowlist)
+- `bin/claude-validate-git.sh` — Catches unsafe git operations (e.g. committing straight to `main`)
+- `bin/claude-validate-build.sh` — Validates build/test invocations
+- `bin/claude-block-absolute-paths.sh` — Forces relative paths so `Bash(git log:*)`-style permission rules stay grantable
+
+Statusline & telemetry:
 - `bin/claude_code_statusline.sh` — Statusline integration
+- `bin/claude_code_capture_usage.py` — Token usage capture for the statusline
+- `bin/claude_code_capture_context.py` — Context-window capture for the statusline
 
 ### Config Template
 `CLAUDE.md.example` — Personal instructions template with:
-- ast-grep examples for code navigation
+- Code navigation tool preferences
 - Git commit style guidelines
 - Code comment philosophy
 - Communication protocols
@@ -70,11 +88,12 @@ This processes `.example` templates, replacing paths with your config:
 ./bin/setup.sh --notes-folder ~/Documents/claude --config-path ~/my-claude-config
 ```
 
-**Creates:**
-- `<CONFIG_PATH>/CLAUDE.md`
-- `<CONFIG_PATH>/commands/` — review-notes, review-knowledge, context
-- `<CONFIG_PATH>/skills/` — daily-log, note-taking, planner
-- `<CONFIG_PATH>/agents/` — all agents
+**Renders** these `.example` templates into `<CONFIG_PATH>`, substituting your notes path:
+- `CLAUDE.md`
+- `commands/` — review-notes, review-knowledge, user/context
+- `skills/` — daily-log, note-taking (incl. `scripts/scan-daily-logs.sh`), planner
+
+Everything else — the remaining skills, commands, and agents — is used straight from the repo checkout. Agents are also synced into `<CONFIG_PATH>/agents/`.
 
 **Note:** The note-taking skill's `UserPromptSubmit` hook hardcodes `$HOME/.claude/` as the script path. If using a custom `--config-path`, update the hook command in `<CONFIG_PATH>/skills/note-taking/SKILL.md` manually.
 
@@ -94,7 +113,12 @@ ln -s /path/to/your/config/folder/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s /path/to/your/config/folder/agents ~/.claude/agents
 ln -s /path/to/your/config/folder/commands ~/.claude/commands
 ln -s /path/to/your/config/folder/skills ~/.claude/skills
+ln -s /path/to/your/config/folder/output-styles ~/.claude/output-styles
+ln -s /path/to/your/config/folder/bin/claude_code_statusline.sh ~/.claude/statusline.sh
+ln -s /path/to/your/config/folder/bin/claude_code_capture_usage.py ~/.claude/claude_code_capture_usage.py
 ```
+
+`setup.sh` offers to create these symlinks for you. It also offers to link `settings.json` — worth skipping if your config folder is a git repo you push, since every permission tweak then becomes a commit.
 
 ## Skill-Specific Setup
 
