@@ -5,7 +5,7 @@
 set -euo pipefail
 
 sid=$(cat | jq -r '.session_id // "unknown"')
-flag="/tmp/daily-log-done.${sid}"
+flag="${TMPDIR:-/tmp}/daily-log-done.${sid}"
 
 if [ -f "$flag" ]; then
   rm -f "$flag"   # consume: the next manual compact needs a fresh /daily-log

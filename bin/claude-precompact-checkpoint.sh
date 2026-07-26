@@ -11,7 +11,7 @@ input=$(cat)
 sid=$(printf '%s' "$input" | jq -r '.session_id // "unknown"')
 cwd=$(printf '%s' "$input" | jq -r '.cwd // empty')
 trigger=$(printf '%s' "$input" | jq -r '.trigger // "auto"')
-out="/tmp/claude-state-${sid}.md"
+out="${TMPDIR:-/tmp}/claude-state-${sid}.md"
 
 {
   echo "# Compaction checkpoint"

@@ -12,7 +12,7 @@ sid=$(printf '%s' "$input" | jq -r '.session_id // "unknown"')
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // empty')
 
 if [ "$skill" = "daily-log" ]; then
-  touch "/tmp/daily-log-done.${sid}"
+  touch "${TMPDIR:-/tmp}/daily-log-done.${sid}"
 fi
 
 exit 0
