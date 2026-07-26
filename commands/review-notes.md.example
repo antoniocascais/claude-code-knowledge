@@ -7,10 +7,6 @@ allowed-tools:
   - LS(**/*)
   - Grep(**)
 description: Review and maintain task notes (Claude-only) related to current conversation topic
-thinking-triggers:
-  - complexity: simple → standard budget
-  - complexity: complex → "think" (project status analysis, context optimization)
-  - complexity: critical → "think hard" (ambiguous states, major restructuring)
 ---
 
 # Task Notes Review & Maintenance

@@ -8,10 +8,6 @@ allowed-tools:
   - Grep(**)
   - Task
 description: Review and enhance knowledge base entries related to current conversation topic
-thinking-triggers:
-  - complexity: simple → standard budget
-  - complexity: complex → "think hard" (cross-domain analysis, gap identification)
-  - complexity: critical → "ultrathink" (architecture decisions, multi-domain restructuring)
 ---
 
 # Knowledge Base Review & Enhancement

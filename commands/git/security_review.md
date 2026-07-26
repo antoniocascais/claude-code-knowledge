@@ -2,10 +2,6 @@
 description: Generate security review report of repository code
 argument-hint: SCOPE (diff|staged|all)
 allowed-tools: Read Glob Grep Bash
-thinking-triggers:
-  - complexity: simple → standard budget (small repos, <20 files)
-  - complexity: complex → "think hard" (medium repos, multiple languages/vulnerabilities)
-  - complexity: critical → "ultrathink" (large codebases, complex attack vectors)
 ---
 
 Perform a comprehensive security review of the current repository.
