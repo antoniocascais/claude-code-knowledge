@@ -2,6 +2,9 @@
 
 Condensed from Anthropic's official guide: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5
 
+Excerpts remain © Anthropic and are quoted here under fair use. This repository's
+AGPL license covers its own content, not the quoted material.
+
 ## Contents
 
 - [Where Fable 5 is stronger](#where-fable-5-is-stronger)

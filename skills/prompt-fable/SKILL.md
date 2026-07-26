@@ -1,6 +1,6 @@
 ---
 name: prompt-fable
-description: "Drafts a copy-pasteable prompt for Claude Fable 5 without dispatching anything. Use when the user says /prompt-fable, write me a fable prompt, draft a prompt for fable, help me prompt fable 5, or wants to hand a prompt to Fable somewhere else (the web app, another session, a colleague). For actually running the task, use the fable skill instead."
+description: "Drafts a copy-pasteable prompt for Claude Fable 5 without dispatching anything. Use when the user says /prompt-fable, write me a fable prompt, draft a prompt for fable, help me prompt fable 5, or wants to hand a prompt to Fable somewhere else (the web app, another session, a colleague). For actually running the task, use the ask-fable skill instead."
 argument-hint: [rough task description]
 ---
 
@@ -48,6 +48,6 @@ After the block, at most two lines: anything left as `[FILL IN]`, and any judgem
 
 ## Reference
 
-Full guide, including the verbatim behavioral snippets and the effort-level guidance: `../fable/references/prompting-fable-5.md`.
+Full guide, including the verbatim behavioral snippets and the effort-level guidance: `../ask-fable/references/prompting-fable-5.md`.
 
 Note that the snippets about scope discipline, honest progress reporting, delegation, and report style belong in a system prompt, not a task prompt. They are already baked into the `fable` agent definition. Include them in a drafted prompt only when the user is pasting into a context that lacks them, such as the web app.
