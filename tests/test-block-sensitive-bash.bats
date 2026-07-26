@@ -31,6 +31,15 @@ run_hook() {
   run bash -c "echo '$json' | $HOOK"
 }
 
+# For commands containing newlines or quotes — jq builds the JSON safely.
+run_hook_raw() {
+  local json
+  json=$(jq -nc --arg cmd "$1" '{tool_name:"Bash",tool_input:{command:$cmd}}')
+  run bash -c "$HOOK <<'HOOKJSON'
+$json
+HOOKJSON"
+}
+
 # --- rules 1-3: .env handling (unchanged behaviour, regression guard) ---
 
 @test "blocks bare .env read" {
@@ -99,6 +108,23 @@ run_hook() {
 @test "allows id_rsa.pub" {
   run_hook "cat /home/someone/.ssh/id_rsa.pub"
   [ "$status" -eq 0 ]
+}
+
+# --- 4a: heredoc bodies are data, not arguments ---
+
+@test "allows a commit message heredoc that names secret files" {
+  run_hook_raw $'git commit -F- <<\'MSG\'\nProtect terraform.tfstate and prod.pem by name\nMSG'
+  [ "$status" -eq 0 ]
+}
+
+@test "still blocks a secret read inside a python heredoc" {
+  run_hook_raw $'python3 <<\'PY\'\nprint(open("/home/x/prod.pem").read())\nPY'
+  [ "$status" -eq 2 ]
+}
+
+@test "arithmetic shift does not blind the secret scan" {
+  run_hook "echo \$((1 << 3)) && cat prod.pem"
+  [ "$status" -eq 2 ]
 }
 
 # --- 4b: benign gitignored files now readable ---

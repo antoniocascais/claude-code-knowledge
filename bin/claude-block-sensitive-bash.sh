@@ -77,8 +77,29 @@ while IFS= read -r word; do
 done < <(echo "$command" | grep -oE '\S+')
 shopt -u nullglob
 
+# A heredoc body is data, not arguments — a commit message that mentions
+# terraform.tfstate is prose. Exception: fed to an interpreter the body IS
+# code, so it stays in scope.
+scannable_text() {
+  local interp='(^|[;&|[:space:]])(python3?|perl|ruby|node|bash|sh|zsh|awk)[^<]*<<'
+  local heredoc='<<-?[[:space:]]*("|'\'')?[A-Za-z_]'
+
+  if [[ "$command" =~ $interp ]] || [[ ! "$command" =~ $heredoc ]]; then
+    printf '%s' "$command"
+  else
+    printf '%s' "${command%%<<*}"
+  fi
+}
+
+# String literals are emitted as tokens too — interpreters embed paths in
+# quotes, where whitespace splitting leaves `prod.pem").read())`.
 extract_tokens() {
-  echo "$command" | grep -oE '\S+' | grep -vE '^-'
+  local text
+  text=$(scannable_text)
+  {
+    echo "$text" | grep -oE '\S+' || true
+    echo "$text" | grep -oE "['\"][^'\"]+['\"]" | tr -d "'\"" || true
+  } | grep -vE '^(-|$)' || true
 }
 
 # 4a. Secret-file name patterns.
