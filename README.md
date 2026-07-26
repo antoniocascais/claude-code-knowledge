@@ -65,7 +65,7 @@ My Claude Code configs — grab what you need.
 Session continuity — keeps durable state from being summarized away by compaction:
 - `bin/claude-precompact-checkpoint.sh` — `PreCompact(auto)`: snapshots task state, cwd, and git context to `/tmp/claude-state-$session_id.md`
 - `bin/claude-compact-reinject.sh` — `SessionStart(compact)`: writes that checkpoint back into context as ground truth over the lossy summary
-- `bin/claude-mark-daily-log.sh` — `PostToolUse(Skill)`: flags that this session ran `/daily-log`
+- `bin/claude-mark-daily-log.sh` — `PostToolUse(Write|Edit)`: flags that this session wrote today's daily log
 - `bin/claude-precompact-daily-log-guard.sh` — `PreCompact(manual)`: blocks `/compact` until this session has logged. The flag is per-session and consumed on use, so a sibling session logging the same project won't satisfy it
 
 The checkpoint pairs with the Compact Instructions block in `CLAUDE.md.example` — the hook writes the file, that block tells Claude to trust it. Both halves are needed. Requires `jq`.

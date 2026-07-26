@@ -128,7 +128,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Skill",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",

@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Tests for the /daily-log-before-/compact pair:
-#   claude-mark-daily-log.sh          PostToolUse(Skill) — drops the flag
+#   claude-mark-daily-log.sh              PostToolUse(Write|Edit) — drops the flag
 #   claude-precompact-daily-log-guard.sh  PreCompact(manual) — reads and consumes it
 # Both resolve the flag under $TMPDIR, which is what makes them testable in isolation.
 
@@ -12,15 +12,19 @@ setup() {
   export TMPDIR="$TEST_DIR"
   SID="sess-abc123"
   FLAG="$TEST_DIR/daily-log-done.${SID}"
+  TODAY=$(date +%F)
+  NOTES="/home/someone/notes/tasks_notes/personal_projects/ai/daily_log"
 }
 
 teardown() {
   rm -rf "$TEST_DIR"
 }
 
+# $1 = file_path, $2 = tool name (default Write), $3 = session id
 run_mark() {
-  local skill="$1" sid="${2:-$SID}" json
-  json=$(jq -nc --arg s "$skill" --arg sid "$sid" '{session_id:$sid,tool_name:"Skill",tool_input:{skill:$s}}')
+  local path="$1" tool="${2:-Write}" sid="${3:-$SID}" json
+  json=$(jq -nc --arg p "$path" --arg t "$tool" --arg sid "$sid" \
+    '{session_id:$sid,tool_name:$t,tool_input:{file_path:$p}}')
   run bash -c "printf '%s' '$json' | $MARK"
 }
 
@@ -32,31 +36,66 @@ run_guard() {
 
 # --- claude-mark-daily-log.sh ---
 
-@test "mark writes the flag for the daily-log skill" {
-  run_mark "daily-log"
+@test "mark writes the flag when today's log is created with Write" {
+  run_mark "$NOTES/$TODAY.md"
   [ "$status" -eq 0 ]
   [ -f "$FLAG" ]
 }
 
-@test "mark ignores any other skill" {
-  run_mark "note-taking"
+@test "mark writes the flag when today's log is appended with Edit" {
+  run_mark "$NOTES/$TODAY.md" "Edit"
+  [ "$status" -eq 0 ]
+  [ -f "$FLAG" ]
+}
+
+# The path that made the old Skill-matcher version fail: a user-typed /daily-log
+# expands as prompt text and never produces a Skill tool call, but it still
+# writes the log through Write or Edit.
+@test "mark does not care how the skill was invoked, only that the log landed" {
+  run_mark "$NOTES/$TODAY.md" "Edit"
+  [ -f "$FLAG" ]
+}
+
+@test "editing an older log does not satisfy the guard" {
+  run_mark "$NOTES/2026-01-01.md" "Edit"
   [ "$status" -eq 0 ]
   [ ! -f "$FLAG" ]
 }
 
-@test "mark survives a Skill payload with no skill field" {
-  run bash -c "printf '%s' '{\"session_id\":\"$SID\",\"tool_name\":\"Skill\",\"tool_input\":{}}' | $MARK"
+@test "promoting flagged items in yesterday's log does not count as logging today" {
+  run_mark "$NOTES/$(date -d yesterday +%F).md" "Edit"
+  [ ! -f "$FLAG" ]
+}
+
+@test "mark ignores a file outside any daily_log directory" {
+  run_mark "/home/someone/notes/tasks_notes/personal_projects/ai/notes.md"
+  [ "$status" -eq 0 ]
+  [ ! -f "$FLAG" ]
+}
+
+@test "mark ignores a today-dated file that is not in daily_log" {
+  run_mark "/home/someone/reports/$TODAY.md"
+  [ ! -f "$FLAG" ]
+}
+
+@test "mark ignores a daily_log path with a trailing suffix" {
+  run_mark "$NOTES/$TODAY.md.bak"
+  [ ! -f "$FLAG" ]
+}
+
+@test "mark survives a payload with no file_path" {
+  run bash -c "printf '%s' '{\"session_id\":\"$SID\",\"tool_name\":\"Write\",\"tool_input\":{}}' | $MARK"
   [ "$status" -eq 0 ]
   [ ! -f "$FLAG" ]
 }
 
 @test "flag is owner-only — /tmp is world-readable" {
-  run_mark "daily-log"
+  run_mark "$NOTES/$TODAY.md"
   [ "$(stat -c %a "$FLAG")" = "600" ]
 }
 
 @test "mark keys the flag by session, not globally" {
-  run_mark "daily-log" "other-session"
+  run_mark "$NOTES/$TODAY.md" "Write" "other-session"
   [ -f "$TEST_DIR/daily-log-done.other-session" ]
   [ ! -f "$FLAG" ]
 }
@@ -113,7 +152,7 @@ run_guard() {
 # --- the pair, end to end ---
 
 @test "mark then guard allows; guard alone blocks" {
-  run_mark "daily-log"
+  run_mark "$NOTES/$TODAY.md"
   run_guard
   [ -z "$output" ]
   run_guard
